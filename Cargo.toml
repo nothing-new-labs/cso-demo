@@ -1,0 +1,11 @@
+[package]
+name = "cso-demo"
+version = "0.1.0"
+edition = "2021"
+authors = ["Nothing New Labs <davidli2010@foxmail.com>"]
+description = "A cascade style optimizer"
+readme = "README.md"
+license = "Apache-2.0"
+keywords = ["SQL", "optimizer", "CBO", "cascade"]
+repository = "https://github.com/nothing-new-labs/cso-demo.git"
+publish = false
