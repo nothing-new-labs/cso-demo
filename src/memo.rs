@@ -26,7 +26,7 @@ impl GroupPlan {
     pub fn group_id(&self) -> u32 {
         self.group
             .upgrade()
-            .expect("expected group is existing")
+            .expect("expect the group is existing")
             .borrow()
             .group_id()
     }
@@ -147,6 +147,6 @@ impl Memo {
     pub fn root_group(&self) -> &GroupRef {
         self.root_group
             .as_ref()
-            .expect("expected root group is existing")
+            .expect("expect the root group is existing")
     }
 }
