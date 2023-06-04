@@ -1,4 +1,4 @@
-use crate::memo::{GroupId, GroupPlanId};
+use crate::memo::{GroupPlanRef, GroupRef};
 use crate::OptimizerContext;
 
 pub enum Task {
@@ -56,67 +56,62 @@ impl TaskRunner {
 }
 
 pub struct OptimizeGroupTask {
-    group_id: GroupId,
+    group: GroupRef,
 }
 
 impl OptimizeGroupTask {
-    pub const fn new(group_id: GroupId) -> Self {
-        OptimizeGroupTask { group_id }
+    pub const fn new(group: GroupRef) -> Self {
+        OptimizeGroupTask { group }
     }
 
-    fn execute(self, task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
-        let group = &optimizer_ctx.memo_mut()[self.group_id];
+    fn execute(self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
+        let group = self.group.borrow();
 
         for plan in group.logical_plans().iter().rev() {
-            let task = OptimizePlanTask::new(self.group_id, plan.plan_id());
+            let task = OptimizePlanTask::new(plan.clone());
             task_runner.push_task(Task::OptimizePlan(task));
         }
 
         for plan in group.physical_plans().iter().rev() {
-            let task = EnforceAndCostTask::new(self.group_id, plan.plan_id());
+            let task = EnforceAndCostTask::new(plan.clone());
             task_runner.push_task(Task::EnforceAndCost(task));
         }
     }
 }
 
 pub struct OptimizePlanTask {
-    group_id: GroupId,
-    plan_id: GroupPlanId,
+    plan: GroupPlanRef,
 }
 
 impl OptimizePlanTask {
-    pub const fn new(group_id: GroupId, plan_id: GroupPlanId) -> Self {
-        OptimizePlanTask { group_id, plan_id }
+    pub const fn new(plan: GroupPlanRef) -> Self {
+        OptimizePlanTask { plan }
     }
 
-    fn execute(self, task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
+    fn execute(self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
         // todo: for each rules
-        let apply_rule_task = ApplyRuleTask::new(self.group_id, self.plan_id);
+        let apply_rule_task = ApplyRuleTask::new(self.plan.clone());
         task_runner.push_task(Task::ApplyRule(apply_rule_task));
 
-        let derive_stats_task = DeriveStatsTask::new(self.group_id, self.plan_id);
+        let derive_stats_task = DeriveStatsTask::new(self.plan.clone());
         task_runner.push_task(Task::DeriveStats(derive_stats_task));
 
-        let group_plan = &optimizer_ctx.memo_mut()[self.group_id][self.plan_id];
+        let group_plan = self.plan.borrow();
 
-        for group_id in group_plan.inputs().iter().rev() {
-            let task = ExploreGroupTask::new(*group_id);
+        for group in group_plan.inputs().iter().rev() {
+            let task = ExploreGroupTask::new(group.clone());
             task_runner.push_task(Task::ExploreGroup(task));
         }
     }
 }
 
 pub struct EnforceAndCostTask {
-    _group_id: GroupId,
-    _plan_id: GroupPlanId,
+    _plan: GroupPlanRef,
 }
 
 impl EnforceAndCostTask {
-    pub const fn new(group_id: GroupId, plan_id: GroupPlanId) -> Self {
-        EnforceAndCostTask {
-            _group_id: group_id,
-            _plan_id: plan_id,
-        }
+    pub const fn new(plan: GroupPlanRef) -> Self {
+        EnforceAndCostTask { _plan: plan }
     }
 
     fn execute(self, _task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
@@ -125,16 +120,12 @@ impl EnforceAndCostTask {
 }
 
 pub struct ApplyRuleTask {
-    _group_id: GroupId,
-    _plan_id: GroupPlanId,
+    _plan: GroupPlanRef,
 }
 
 impl ApplyRuleTask {
-    pub const fn new(group_id: GroupId, plan_id: GroupPlanId) -> Self {
-        ApplyRuleTask {
-            _group_id: group_id,
-            _plan_id: plan_id,
-        }
+    pub const fn new(plan: GroupPlanRef) -> Self {
+        ApplyRuleTask { _plan: plan }
     }
 
     fn execute(self, _task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
@@ -143,16 +134,12 @@ impl ApplyRuleTask {
 }
 
 pub struct DeriveStatsTask {
-    _group_id: GroupId,
-    _plan_id: GroupPlanId,
+    _plan: GroupPlanRef,
 }
 
 impl DeriveStatsTask {
-    pub const fn new(group_id: GroupId, plan_id: GroupPlanId) -> Self {
-        DeriveStatsTask {
-            _group_id: group_id,
-            _plan_id: plan_id,
-        }
+    pub const fn new(plan: GroupPlanRef) -> Self {
+        DeriveStatsTask { _plan: plan }
     }
 
     fn execute(self, _task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
@@ -161,23 +148,22 @@ impl DeriveStatsTask {
 }
 
 pub struct ExploreGroupTask {
-    group_id: GroupId,
+    group: GroupRef,
 }
 
 impl ExploreGroupTask {
-    pub const fn new(group_id: GroupId) -> Self {
-        ExploreGroupTask { group_id }
+    pub const fn new(group: GroupRef) -> Self {
+        ExploreGroupTask { group }
     }
 
-    fn execute(self, task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
-        let group = &mut optimizer_ctx.memo_mut()[self.group_id];
+    fn execute(self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
+        let mut group = self.group.borrow_mut();
         if group.is_explored() {
             return;
         }
 
         for plan in group.logical_plans() {
-            debug_assert_eq!(self.group_id, plan.group_id());
-            let task = OptimizePlanTask::new(plan.group_id(), plan.plan_id());
+            let task = OptimizePlanTask::new(plan.clone());
             task_runner.push_task(Task::OptimizePlan(task));
         }
 

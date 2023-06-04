@@ -1,134 +1,85 @@
 use crate::{LogicalPlan, Operator};
-use std::ops::{Index, IndexMut};
-
-#[derive(Copy, Clone, PartialEq, Debug)]
-#[repr(transparent)]
-pub struct GroupId(i32);
-
-impl GroupId {
-    const INVALID: GroupId = GroupId(-1);
-
-    pub const fn new(value: usize) -> Self {
-        assert!(value <= i32::MAX as usize);
-        GroupId(value as i32)
-    }
-
-    #[inline]
-    const fn is_valid(&self) -> bool {
-        self.0 >= 0
-    }
-}
-
-#[derive(Copy, Clone)]
-pub struct GroupPlanId {
-    plan_type_id: i32, // logical: 0, physical: 1
-    plan_id: i32,
-}
-
-impl GroupPlanId {
-    const INVALID: GroupPlanId = GroupPlanId {
-        plan_type_id: -1,
-        plan_id: -1,
-    };
-
-    pub const fn new(is_physical: bool, plan_id: usize) -> Self {
-        assert!(plan_id <= i32::MAX as usize);
-        GroupPlanId {
-            plan_type_id: is_physical as i32,
-            plan_id: plan_id as i32,
-        }
-    }
-}
-
-impl Index<GroupPlanId> for Group {
-    type Output = GroupPlan;
-
-    fn index(&self, index: GroupPlanId) -> &Self::Output {
-        &self.plans[index.plan_type_id as usize][index.plan_id as usize]
-    }
-}
-
-impl IndexMut<GroupPlanId> for Group {
-    fn index_mut(&mut self, index: GroupPlanId) -> &mut Self::Output {
-        &mut self.plans[index.plan_type_id as usize][index.plan_id as usize]
-    }
-}
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
 
 pub struct GroupPlan {
-    group_id: GroupId,
-    plan_id: GroupPlanId,
+    group: GroupWeakRef,
     op: Operator,
-    inputs: Vec<GroupId>,
+    inputs: Vec<GroupRef>,
 }
 
+pub type GroupPlanRef = Rc<RefCell<GroupPlan>>;
+
 impl GroupPlan {
-    pub const fn new(op: Operator, inputs: Vec<GroupId>) -> Self {
+    pub fn new(op: Operator, inputs: Vec<GroupRef>) -> Self {
         GroupPlan {
-            group_id: GroupId::INVALID,
-            plan_id: GroupPlanId::INVALID,
+            group: GroupWeakRef::new(),
             op,
             inputs,
         }
     }
 
-    fn set_group_id(&mut self, group_id: GroupId) {
-        self.group_id = group_id;
+    fn set_group(&mut self, group: GroupWeakRef) {
+        self.group = group;
     }
 
-    pub fn group_id(&self) -> GroupId {
-        self.group_id
+    pub fn group_id(&self) -> u32 {
+        self.group
+            .upgrade()
+            .expect("expected group is existing")
+            .borrow()
+            .group_id()
     }
 
-    fn set_plan_id(&mut self, plan_id: GroupPlanId) {
-        self.plan_id = plan_id;
-    }
-
-    pub fn plan_id(&self) -> GroupPlanId {
-        self.plan_id
-    }
-
-    pub fn inputs(&self) -> &[GroupId] {
+    pub fn inputs(&self) -> &[GroupRef] {
         &self.inputs
     }
 }
 
 pub struct Group {
-    group_id: GroupId,
-    // plans[0] is logical and plans[1] is physical
-    plans: [Vec<GroupPlan>; 2],
+    group_id: u32,
+    logical_plans: Vec<GroupPlanRef>,
+    physical_plans: Vec<GroupPlanRef>,
     is_explored: bool,
 }
 
+pub type GroupRef = Rc<RefCell<Group>>;
+pub type GroupWeakRef = Weak<RefCell<Group>>;
+
 impl Group {
-    const fn new(group_id: GroupId) -> Self {
-        debug_assert!(group_id.is_valid());
+    const fn new(group_id: u32) -> Self {
         Group {
             group_id,
-            plans: [Vec::new(), Vec::new()],
+            logical_plans: Vec::new(),
+            physical_plans: Vec::new(),
             is_explored: false,
         }
     }
 
-    pub fn logical_plans(&self) -> &[GroupPlan] {
-        &self.plans[0]
+    pub fn group_id(&self) -> u32 {
+        self.group_id
     }
 
-    pub fn physical_plans(&self) -> &[GroupPlan] {
-        &self.plans[1]
+    pub fn logical_plans(&self) -> &[GroupPlanRef] {
+        &self.logical_plans
     }
 
-    fn add_plan(&mut self, mut plan: GroupPlan) {
-        plan.set_group_id(self.group_id);
+    pub fn physical_plans(&self) -> &[GroupPlanRef] {
+        &self.physical_plans
+    }
+
+    fn add_plan(this: &GroupRef, mut plan: GroupPlan) {
+        plan.set_group(GroupRef::downgrade(this));
         match plan.op {
             Operator::Logical(_) => {
-                let plan_id = GroupPlanId::new(false, self.plans[0].len());
-                plan.set_plan_id(plan_id);
-                self.plans[0].push(plan);
+                this.borrow_mut()
+                    .logical_plans
+                    .push(Rc::new(RefCell::new(plan)));
             }
             Operator::Physical(_) => {
-                let plan_id = GroupPlanId::new(true, self.plans[1].len());
-                plan.set_plan_id(plan_id);
-                self.plans[1].push(plan);
+                this.borrow_mut()
+                    .physical_plans
+                    .push(Rc::new(RefCell::new(plan)));
             }
         }
     }
@@ -143,26 +94,9 @@ impl Group {
 }
 
 pub struct Memo {
-    groups: Vec<Group>,
-    root_group_id: GroupId,
-}
-
-impl Index<GroupId> for Memo {
-    type Output = Group;
-
-    #[inline]
-    fn index(&self, index: GroupId) -> &Self::Output {
-        debug_assert!(index.is_valid());
-        &self.groups[index.0 as usize]
-    }
-}
-
-impl IndexMut<GroupId> for Memo {
-    #[inline]
-    fn index_mut(&mut self, index: GroupId) -> &mut Self::Output {
-        debug_assert!(index.is_valid());
-        &mut self.groups[index.0 as usize]
-    }
+    groups: Vec<GroupRef>,
+    root_group: Option<GroupRef>,
+    next_group_id: u32,
 }
 
 impl Memo {
@@ -170,45 +104,49 @@ impl Memo {
     pub const fn new() -> Self {
         Memo {
             groups: Vec::new(),
-            root_group_id: GroupId::INVALID,
+            root_group: None,
+            next_group_id: 0,
         }
     }
 
     pub fn init(&mut self, plan: LogicalPlan) {
-        let root_group_id = self.copy_in(None, plan);
-        self.root_group_id = root_group_id;
+        let root_group = self.copy_in(None, plan);
+        self.root_group = Some(root_group);
     }
 
-    fn copy_in(&mut self, target_group_id: Option<GroupId>, plan: LogicalPlan) -> GroupId {
+    fn copy_in(&mut self, target_group: Option<GroupRef>, plan: LogicalPlan) -> GroupRef {
         let mut inputs = Vec::new();
         for input in plan.inputs {
-            let group_id = self.copy_in(None, input);
-            inputs.push(group_id);
+            let group = self.copy_in(None, input);
+            inputs.push(group);
         }
 
         let group_plan = GroupPlan::new(Operator::Logical(plan.op), inputs);
-        self.insert_group_plan(group_plan, target_group_id)
+        self.insert_group_plan(group_plan, target_group)
     }
 
-    fn insert_group_plan(&mut self, plan: GroupPlan, target_group_id: Option<GroupId>) -> GroupId {
-        let target_group = match target_group_id {
+    fn insert_group_plan(&mut self, plan: GroupPlan, target_group: Option<GroupRef>) -> GroupRef {
+        let target_group = match target_group {
             None => self.new_group(),
-            Some(id) => &mut self[id],
+            Some(group) => group,
         };
 
-        target_group.add_plan(plan);
-        target_group.group_id
+        Group::add_plan(&target_group, plan);
+        target_group
     }
 
     #[inline]
-    fn new_group(&mut self) -> &mut Group {
-        let group_id = GroupId::new(self.groups.len());
-        let group = Group::new(group_id);
+    fn new_group(&mut self) -> GroupRef {
+        let group = Rc::new(RefCell::new(Group::new(self.next_group_id)));
+        self.next_group_id += 1;
+        let group_clone = group.clone();
         self.groups.push(group);
-        &mut self[group_id]
+        group_clone
     }
 
-    pub fn root_group_id(&self) -> GroupId {
-        self.root_group_id
+    pub fn root_group(&self) -> &GroupRef {
+        self.root_group
+            .as_ref()
+            .expect("expected root group is existing")
     }
 }

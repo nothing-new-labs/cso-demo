@@ -74,7 +74,7 @@ impl Optimizer {
         let mut optimizer_ctx = OptimizerContext::new();
         optimizer_ctx.memo_mut().init(plan);
         let mut task_runner = TaskRunner::new();
-        let initial_task = OptimizeGroupTask::new(optimizer_ctx.memo().root_group_id());
+        let initial_task = OptimizeGroupTask::new(optimizer_ctx.memo().root_group().clone());
         task_runner.push_task(Task::OptimizeGroup(initial_task));
         task_runner.run(&mut optimizer_ctx);
         todo!()
