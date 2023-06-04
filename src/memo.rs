@@ -38,6 +38,11 @@ impl GroupPlan {
             .group_id()
     }
 
+    pub fn operator(&self) -> &Operator {
+        &self.op
+    }
+
+    pub fn inputs(&self) -> &[GroupId] {
     pub fn inputs(&self) -> &[GroupRef] {
         &self.inputs
     }

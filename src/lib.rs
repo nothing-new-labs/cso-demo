@@ -7,15 +7,20 @@ use crate::statistics::Statistics;
 use crate::task::{OptimizeGroupTask, Task, TaskRunner};
 use std::rc::Rc;
 
+pub mod rule;
+
 mod memo;
 mod statistics;
 mod task;
 
 pub trait LogicalOperator {
+    fn operator_id(&self) -> i16;
     fn derive_statistics(&self, _input_stats: &[Rc<Statistics>]) -> Statistics;
 }
 
-pub trait PhysicalOperator {}
+pub trait PhysicalOperator {
+    fn operator_id(&self) -> i16;
+}
 
 pub enum Operator {
     Logical(Box<dyn LogicalOperator>),
@@ -92,6 +97,8 @@ impl Optimizer {
         task_runner.push_task(Task::OptimizeGroup(initial_task));
         task_runner.run(&mut optimizer_ctx);
         todo!()
+
+        Rc::
     }
 }
 
