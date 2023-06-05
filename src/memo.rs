@@ -42,7 +42,6 @@ impl GroupPlan {
         &self.op
     }
 
-    pub fn inputs(&self) -> &[GroupId] {
     pub fn inputs(&self) -> &[GroupRef] {
         &self.inputs
     }

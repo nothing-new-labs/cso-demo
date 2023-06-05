@@ -97,8 +97,6 @@ impl Optimizer {
         task_runner.push_task(Task::OptimizeGroup(initial_task));
         task_runner.run(&mut optimizer_ctx);
         todo!()
-
-        Rc::
     }
 }
 
