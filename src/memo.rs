@@ -38,8 +38,8 @@ impl GroupPlan {
         &self.inputs
     }
 
-    pub fn group(&self) -> Option<GroupRef> {
-        self.group.upgrade()
+    pub fn group(&self) -> &GroupWeakRef {
+        &self.group
     }
 
     pub fn is_stats_derived(&self) -> bool {
@@ -123,11 +123,11 @@ impl Group {
         self.is_explored = true;
     }
 
-    pub fn set_statistics(&mut self, stats: Rc<Statistics>) {
-        self.statistics = Some(stats);
+    pub fn set_statistics(&mut self, stats: Statistics) {
+        self.statistics = Some(Rc::new(stats));
     }
 
-    pub fn update_statistics(&mut self, stats: Rc<Statistics>) {
+    pub fn update_statistics(&mut self, stats: Statistics) {
         match self.statistics {
             Some(ref old_stats) if !Statistics::should_update(&stats, old_stats) => {}
             _ => self.set_statistics(stats),

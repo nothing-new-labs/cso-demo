@@ -1,6 +1,5 @@
 use crate::memo::{GroupPlanRef, GroupRef};
 use crate::OptimizerContext;
-use std::rc::Rc;
 
 pub enum Task {
     OptimizeGroup(OptimizeGroupTask),
@@ -151,9 +150,12 @@ impl DeriveStatsTask {
         }
 
         let stats = plan.derive_statistics();
-        if let Some(group) = plan.group() {
-            group.borrow_mut().update_statistics(Rc::new(stats));
-        }
+
+        let group = plan
+            .group()
+            .upgrade()
+            .expect("expect the group is existing");
+        group.borrow_mut().update_statistics(stats);
 
         plan.set_stats_derived();
     }
