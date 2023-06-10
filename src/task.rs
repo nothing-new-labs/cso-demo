@@ -1,5 +1,6 @@
 use crate::memo::{GroupPlanRef, GroupRef};
 use crate::OptimizerContext;
+use std::rc::Rc;
 
 pub enum Task {
     OptimizeGroup(OptimizeGroupTask),
@@ -134,16 +135,27 @@ impl ApplyRuleTask {
 }
 
 pub struct DeriveStatsTask {
-    _plan: GroupPlanRef,
+    plan: GroupPlanRef,
 }
 
 impl DeriveStatsTask {
     pub const fn new(plan: GroupPlanRef) -> Self {
-        DeriveStatsTask { _plan: plan }
+        DeriveStatsTask { plan }
     }
 
     fn execute(self, _task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
-        todo!()
+        let mut plan = self.plan.borrow_mut();
+
+        if plan.is_stats_derived() {
+            return;
+        }
+
+        let stats = plan.derive_statistics();
+        if let Some(group) = plan.group() {
+            group.borrow_mut().update_statistics(Rc::new(stats));
+        }
+
+        plan.set_stats_derived();
     }
 }
 
