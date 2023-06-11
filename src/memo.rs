@@ -1,3 +1,4 @@
+use crate::statistics::Statistics;
 use crate::{LogicalPlan, Operator};
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -6,6 +7,7 @@ pub struct GroupPlan {
     group: GroupWeakRef,
     op: Operator,
     inputs: Vec<GroupRef>,
+    stats_derived: bool,
 }
 
 pub type GroupPlanRef = Rc<RefCell<GroupPlan>>;
@@ -16,11 +18,16 @@ impl GroupPlan {
             group: GroupWeakRef::new(),
             op,
             inputs,
+            stats_derived: false,
         }
     }
 
     fn set_group(&mut self, group: GroupWeakRef) {
         self.group = group;
+    }
+
+    pub fn group(&self) -> GroupRef {
+        self.group.upgrade().expect("expect the group is existing")
     }
 
     pub fn group_id(&self) -> u32 {
@@ -34,6 +41,27 @@ impl GroupPlan {
     pub fn inputs(&self) -> &[GroupRef] {
         &self.inputs
     }
+
+    pub fn is_stats_derived(&self) -> bool {
+        self.stats_derived
+    }
+
+    pub fn set_stats_derived(&mut self) {
+        self.stats_derived = true;
+    }
+
+    pub fn derive_statistics(&self) -> Statistics {
+        let mut input_stats = Vec::with_capacity(self.inputs.len());
+
+        for input in &self.inputs {
+            let group = input.borrow();
+            let stats = group.statistics();
+            assert!(stats.is_some());
+            input_stats.push(stats.clone().unwrap());
+        }
+
+        self.op.derive_statistics(input_stats.as_slice())
+    }
 }
 
 pub struct Group {
@@ -41,6 +69,7 @@ pub struct Group {
     logical_plans: Vec<GroupPlanRef>,
     physical_plans: Vec<GroupPlanRef>,
     is_explored: bool,
+    statistics: Option<Rc<Statistics>>,
 }
 
 pub type GroupRef = Rc<RefCell<Group>>;
@@ -53,6 +82,7 @@ impl Group {
             logical_plans: Vec::new(),
             physical_plans: Vec::new(),
             is_explored: false,
+            statistics: None,
         }
     }
 
@@ -90,6 +120,25 @@ impl Group {
 
     pub fn set_explored(&mut self) {
         self.is_explored = true;
+    }
+
+    pub fn set_statistics(&mut self, stats: Statistics) {
+        self.statistics = Some(Rc::new(stats));
+    }
+
+    pub fn update_statistics(&mut self, stats: Statistics) {
+        match self.statistics {
+            Some(ref old_stats) => {
+                if Statistics::should_update(&stats, old_stats) {
+                    self.set_statistics(stats)
+                }
+            }
+            _ => self.set_statistics(stats),
+        }
+    }
+
+    pub fn statistics(&self) -> &Option<Rc<Statistics>> {
+        &self.statistics
     }
 }
 

@@ -3,12 +3,18 @@
 #![forbid(unsafe_code)]
 
 use crate::memo::Memo;
+use crate::statistics::Statistics;
 use crate::task::{OptimizeGroupTask, Task, TaskRunner};
+use std::rc::Rc;
 
 mod memo;
+mod statistics;
 mod task;
 
-pub trait LogicalOperator {}
+pub trait LogicalOperator {
+    fn derive_statistics(&self, _input_stats: &[Rc<Statistics>]) -> Statistics;
+}
+
 pub trait PhysicalOperator {}
 
 pub enum Operator {
@@ -30,6 +36,14 @@ impl Operator {
         match self {
             Operator::Logical(_) => false,
             Operator::Physical(_) => true,
+        }
+    }
+
+    #[inline]
+    pub fn derive_statistics(&self, input_stats: &[Rc<Statistics>]) -> Statistics {
+        match self {
+            Operator::Logical(op) => op.derive_statistics(input_stats),
+            Operator::Physical(_) => unreachable!("only logical operators can derive statistics"),
         }
     }
 }
