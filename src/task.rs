@@ -151,10 +151,7 @@ impl DeriveStatsTask {
 
         let stats = plan.derive_statistics();
 
-        let group = plan
-            .group()
-            .upgrade()
-            .expect("expect the group is existing");
+        let group = plan.group();
         group.borrow_mut().update_statistics(stats);
 
         plan.set_stats_derived();

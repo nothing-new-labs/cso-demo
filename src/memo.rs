@@ -26,6 +26,10 @@ impl GroupPlan {
         self.group = group;
     }
 
+    pub fn group(&self) -> GroupRef {
+        self.group.upgrade().expect("expect the group is existing")
+    }
+
     pub fn group_id(&self) -> u32 {
         self.group
             .upgrade()
@@ -36,10 +40,6 @@ impl GroupPlan {
 
     pub fn inputs(&self) -> &[GroupRef] {
         &self.inputs
-    }
-
-    pub fn group(&self) -> &GroupWeakRef {
-        &self.group
     }
 
     pub fn is_stats_derived(&self) -> bool {
@@ -55,7 +55,6 @@ impl GroupPlan {
 
         for input in &self.inputs {
             let group = input.borrow();
-            assert!(group.logical_plans()[0].borrow().is_stats_derived());
             let stats = group.statistics();
             assert!(stats.is_some());
             input_stats.push(stats.clone().unwrap());
@@ -129,7 +128,11 @@ impl Group {
 
     pub fn update_statistics(&mut self, stats: Statistics) {
         match self.statistics {
-            Some(ref old_stats) if !Statistics::should_update(&stats, old_stats) => {}
+            Some(ref old_stats) => {
+                if Statistics::should_update(&stats, old_stats) {
+                    self.set_statistics(stats)
+                }
+            }
             _ => self.set_statistics(stats),
         }
     }
