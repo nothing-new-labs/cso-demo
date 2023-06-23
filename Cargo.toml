@@ -9,3 +9,6 @@ license = "Apache-2.0"
 keywords = ["SQL", "optimizer", "CBO", "cascade"]
 repository = "https://github.com/nothing-new-labs/cso-demo.git"
 publish = false
+
+[dependencies]
+bit-set = "0.5.3"
