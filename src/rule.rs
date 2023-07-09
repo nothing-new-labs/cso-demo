@@ -196,7 +196,7 @@ impl<'a> Binding<'a> {
             }
 
             let plan = self.matches(self.pattern, self.plan);
-            if plan.is_some() || self.group_plan_index.len() != 1 {
+            if plan.is_some() || self.group_plan_index.len() == 1 {
                 break;
             }
         }
