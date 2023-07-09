@@ -1,5 +1,7 @@
+use crate::rule::Rule;
 use crate::statistics::Statistics;
-use crate::{LogicalPlan, Operator};
+use crate::{LogicalPlan, Operator, Plan};
+use bit_set::BitSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
@@ -7,6 +9,7 @@ pub struct GroupPlan {
     group: GroupWeakRef,
     op: Operator,
     inputs: Vec<GroupRef>,
+    rule_masks: BitSet,
     stats_derived: bool,
 }
 
@@ -18,6 +21,7 @@ impl GroupPlan {
             group: GroupWeakRef::new(),
             op,
             inputs,
+            rule_masks: BitSet::new(),
             stats_derived: false,
         }
     }
@@ -38,8 +42,16 @@ impl GroupPlan {
             .group_id()
     }
 
+    pub fn operator(&self) -> &Operator {
+        &self.op
+    }
+
     pub fn inputs(&self) -> &[GroupRef] {
         &self.inputs
+    }
+
+    pub fn is_rule_explored(&self, rule: &dyn Rule) -> bool {
+        self.rule_masks.contains(rule.rule_id() as usize)
     }
 
     pub fn is_stats_derived(&self) -> bool {
@@ -98,18 +110,18 @@ impl Group {
         &self.physical_plans
     }
 
-    fn add_plan(this: &GroupRef, mut plan: GroupPlan) {
+    fn add_plan(this: &GroupRef, mut plan: GroupPlan) -> GroupPlanRef {
         plan.set_group(GroupRef::downgrade(this));
         match plan.op {
             Operator::Logical(_) => {
-                this.borrow_mut()
-                    .logical_plans
-                    .push(Rc::new(RefCell::new(plan)));
+                let plan_ref = Rc::new(RefCell::new(plan));
+                this.borrow_mut().logical_plans.push(plan_ref.clone());
+                plan_ref
             }
             Operator::Physical(_) => {
-                this.borrow_mut()
-                    .physical_plans
-                    .push(Rc::new(RefCell::new(plan)));
+                let plan_ref = Rc::new(RefCell::new(plan));
+                this.borrow_mut().physical_plans.push(plan_ref.clone());
+                plan_ref
             }
         }
     }
@@ -163,6 +175,21 @@ impl Memo {
         self.root_group = Some(root_group);
     }
 
+    pub(crate) fn copy_in_plan(&mut self, target_group: Option<GroupRef>, plan: &Plan) -> GroupPlanRef {
+        let mut inputs = Vec::new();
+        for input in plan.inputs() {
+            let group = match input.group_plan() {
+                None => self.copy_in_plan(None, input).borrow().group(),
+                Some(p) => p.borrow().group(),
+            };
+
+            inputs.push(group);
+        }
+
+        let group_plan = GroupPlan::new(plan.op.clone(), inputs);
+        self.insert_group_plan(group_plan, target_group)
+    }
+
     fn copy_in(&mut self, target_group: Option<GroupRef>, plan: LogicalPlan) -> GroupRef {
         let mut inputs = Vec::new();
         for input in plan.inputs {
@@ -171,17 +198,18 @@ impl Memo {
         }
 
         let group_plan = GroupPlan::new(Operator::Logical(plan.op), inputs);
-        self.insert_group_plan(group_plan, target_group)
+        let plan_ref = self.insert_group_plan(group_plan, target_group);
+        let group = plan_ref.borrow().group();
+        group
     }
 
-    fn insert_group_plan(&mut self, plan: GroupPlan, target_group: Option<GroupRef>) -> GroupRef {
+    fn insert_group_plan(&mut self, plan: GroupPlan, target_group: Option<GroupRef>) -> GroupPlanRef {
         let target_group = match target_group {
             None => self.new_group(),
             Some(group) => group,
         };
 
-        Group::add_plan(&target_group, plan);
-        target_group
+        Group::add_plan(&target_group, plan)
     }
 
     #[inline]
@@ -194,8 +222,6 @@ impl Memo {
     }
 
     pub fn root_group(&self) -> &GroupRef {
-        self.root_group
-            .as_ref()
-            .expect("expect the root group is existing")
+        self.root_group.as_ref().expect("expect the root group is existing")
     }
 }

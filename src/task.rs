@@ -1,5 +1,7 @@
-use crate::memo::{GroupPlanRef, GroupRef};
+use crate::memo::{GroupPlan, GroupPlanRef, GroupRef};
+use crate::rule::{Binding, RuleRef, RuleSet};
 use crate::OptimizerContext;
+use std::ops::Deref;
 
 pub enum Task {
     OptimizeGroup(OptimizeGroupTask),
@@ -88,10 +90,32 @@ impl OptimizePlanTask {
         OptimizePlanTask { plan }
     }
 
-    fn execute(self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
-        // todo: for each rules
-        let apply_rule_task = ApplyRuleTask::new(self.plan.clone());
-        task_runner.push_task(Task::ApplyRule(apply_rule_task));
+    fn filter_invalid_rules(plan: &GroupPlan, candidate_rules: &[RuleRef], valid_rules: &mut Vec<RuleRef>) {
+        candidate_rules
+            .iter()
+            .filter(|rule| plan.is_rule_explored(rule.as_ref()) || !rule.pattern().match_without_child(plan))
+            .for_each(|rule| valid_rules.push(rule.clone()));
+    }
+
+    fn get_rules(&self, rule_set: &RuleSet) -> Vec<RuleRef> {
+        let mut rules = Vec::new();
+        let plan = self.plan.borrow();
+
+        let transform_rules = rule_set.transform_rules();
+        Self::filter_invalid_rules(plan.deref(), transform_rules, &mut rules);
+
+        let implement_rules = rule_set.implement_rules();
+        Self::filter_invalid_rules(plan.deref(), implement_rules, &mut rules);
+
+        rules
+    }
+
+    fn execute(self, task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
+        let rules = self.get_rules(optimizer_ctx.rule_set());
+        for rule in rules {
+            let apply_rule_task = ApplyRuleTask::new(self.plan.clone(), rule);
+            task_runner.push_task(Task::ApplyRule(apply_rule_task));
+        }
 
         let derive_stats_task = DeriveStatsTask::new(self.plan.clone());
         task_runner.push_task(Task::DeriveStats(derive_stats_task));
@@ -120,16 +144,42 @@ impl EnforceAndCostTask {
 }
 
 pub struct ApplyRuleTask {
-    _plan: GroupPlanRef,
+    plan: GroupPlanRef,
+    rule: RuleRef,
 }
 
 impl ApplyRuleTask {
-    pub const fn new(plan: GroupPlanRef) -> Self {
-        ApplyRuleTask { _plan: plan }
+    pub const fn new(plan: GroupPlanRef, rule: RuleRef) -> Self {
+        ApplyRuleTask { plan, rule }
     }
 
-    fn execute(self, _task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
-        todo!()
+    fn execute(self, task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
+        assert!(!self.plan.borrow().is_rule_explored(self.rule.as_ref()));
+
+        let rule = self.rule.as_ref();
+        let plan = self.plan.borrow();
+        let group = plan.group();
+        let pattern = self.rule.pattern();
+        let binding = Binding::new(pattern, plan.deref());
+        let mut new_plans = Vec::new();
+
+        for plan in binding {
+            if !rule.check(&plan, optimizer_ctx) {
+                continue;
+            }
+
+            let mut target_plans = rule.transform(&plan, optimizer_ctx);
+            new_plans.append(&mut target_plans);
+        }
+
+        for plan in new_plans {
+            let group_plan = optimizer_ctx.memo_mut().copy_in_plan(Some(group.clone()), &plan);
+            if group_plan.borrow().operator().is_logical() {
+                task_runner.push_task(Task::OptimizePlan(OptimizePlanTask::new(group_plan)));
+            } else {
+                task_runner.push_task(Task::EnforceAndCost(EnforceAndCostTask::new(group_plan)));
+            }
+        }
     }
 }
 
