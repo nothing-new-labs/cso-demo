@@ -1,5 +1,6 @@
 use crate::memo::{Group, GroupPlan, GroupPlanRef};
-use crate::{Operator, OptimizerContext, Plan};
+use crate::operators::Operator;
+use crate::{OptimizerContext, Plan};
 use std::any::Any;
 use std::ops::Deref;
 use std::rc::Rc;

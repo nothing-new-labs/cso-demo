@@ -192,14 +192,14 @@ impl DeriveStatsTask {
         DeriveStatsTask { plan }
     }
 
-    fn execute(self, _task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
+    fn execute(self, _task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
         let mut plan = self.plan.borrow_mut();
 
         if plan.is_stats_derived() {
             return;
         }
 
-        let stats = plan.derive_statistics();
+        let stats = plan.derive_statistics(optimizer_ctx);
 
         let group = plan.group();
         group.borrow_mut().update_statistics(stats);
