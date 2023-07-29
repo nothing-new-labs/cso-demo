@@ -39,10 +39,18 @@ impl Operator {
     }
 
     #[inline]
-    pub fn derive_statistics(&self, optimizer_ctx: &OptimizerContext, input_stats: &[Rc<Statistics>]) -> Statistics {
+    pub fn logical_op(&self) -> &Rc<dyn LogicalOperator> {
         match self {
-            Operator::Logical(op) => op.derive_statistics(optimizer_ctx, input_stats),
-            Operator::Physical(_) => unreachable!("only logical operators can derive statistics"),
+            Operator::Logical(op) => op,
+            Operator::Physical(_) => unreachable!("expect logical operator"),
+        }
+    }
+
+    #[inline]
+    pub fn physical_op(&self) -> &Rc<dyn LogicalOperator> {
+        match self {
+            Operator::Logical(_) => unreachable!("expect physical operator"),
+            Operator::Physical(op) => op,
         }
     }
 }

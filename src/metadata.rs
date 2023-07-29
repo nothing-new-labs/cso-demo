@@ -1,4 +1,4 @@
-use crate::statistics::{ColumnStat, ColumnStatSet, Statistics};
+use crate::statistics::{ColumnIndex, ColumnStat, ColumnStatSet, Statistics};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -13,6 +13,7 @@ pub trait RelationMd {
 
 pub trait ColumnMd {
     fn column_stat(&self) -> ColumnStat;
+    fn column_index(&self) -> ColumnIndex;
 }
 
 #[allow(dead_code)]
@@ -35,25 +36,25 @@ pub struct MdAccessor {
 impl MdAccessor {
     /// Construct a statistics object for the columns of the given relation
     pub fn derive_stats(&self, md_id: &MdId) -> Statistics {
-        let relation_md = self.retrieve_relation_metadata(md_id);
-        let output_row_count = relation_md.output_row_count();
+        let rel_md = self.retrieve_relation_metadata(md_id);
+        let output_row_count = rel_md.output_row_count();
 
-        let column_md_ids = relation_md.column_md_ids();
-        let column_stats = self.derive_column_stats(column_md_ids);
+        let col_md_ids = rel_md.column_md_ids();
+        let col_stats = self.derive_column_stats(col_md_ids);
 
-        Statistics::new(output_row_count, column_stats)
+        Statistics::new(output_row_count, col_stats)
     }
 
     fn derive_column_stats(&self, column_md_ids: &[MdId]) -> ColumnStatSet {
-        let mut column_stats = ColumnStatSet::with_capacity(column_md_ids.len());
-        for (index, md_id) in column_md_ids.iter().enumerate() {
-            let column_md = self.retrieve_column_metadata(md_id);
-            let stat = column_md.column_stat();
-            // todo
-            column_stats.insert(index, stat);
+        let mut col_stats = ColumnStatSet::with_capacity(column_md_ids.len());
+        for md_id in column_md_ids.iter() {
+            let col_md = self.retrieve_column_metadata(md_id);
+            let col_idx = col_md.column_index();
+            let col_stat = col_md.column_stat();
+            col_stats.insert(col_idx, col_stat);
         }
 
-        column_stats
+        col_stats
     }
 
     fn retrieve_relation_metadata(&self, md_id: &MdId) -> Rc<dyn RelationMd> {

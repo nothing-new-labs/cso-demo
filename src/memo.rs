@@ -73,7 +73,9 @@ impl GroupPlan {
             input_stats.push(stats.clone().unwrap());
         }
 
-        self.op.derive_statistics(optimizer_ctx, input_stats.as_slice())
+        self.op
+            .logical_op()
+            .derive_statistics(optimizer_ctx, input_stats.as_slice())
     }
 }
 
