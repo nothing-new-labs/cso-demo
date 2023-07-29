@@ -47,7 +47,7 @@ impl Operator {
     }
 
     #[inline]
-    pub fn physical_op(&self) -> &Rc<dyn LogicalOperator> {
+    pub fn physical_op(&self) -> &Rc<dyn PhysicalOperator> {
         match self {
             Operator::Logical(_) => unreachable!("expect physical operator"),
             Operator::Physical(op) => op,
