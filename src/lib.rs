@@ -7,13 +7,13 @@ pub mod rule;
 mod datum;
 mod memo;
 mod metadata;
-mod operators;
+mod operator;
 mod statistics;
 mod task;
 
 use crate::memo::{GroupPlanRef, Memo};
 use crate::metadata::MdAccessor;
-use crate::operators::{LogicalOperator, Operator, PhysicalOperator};
+use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::rule::RuleSet;
 use crate::task::{OptimizeGroupTask, Task, TaskRunner};
 use std::rc::Rc;

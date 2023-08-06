@@ -1,4 +1,4 @@
-use crate::operators::Operator;
+use crate::operator::Operator;
 use crate::rule::Rule;
 use crate::statistics::Statistics;
 use crate::{LogicalPlan, OptimizerContext, Plan};
@@ -73,9 +73,9 @@ impl GroupPlan {
             input_stats.push(stats.clone().unwrap());
         }
 
-        self.op
-            .logical_op()
-            .derive_statistics(optimizer_ctx, input_stats.as_slice())
+        let md_accessor = optimizer_ctx.md_accessor();
+        let input_stats = input_stats.as_slice();
+        self.op.logical_op().derive_statistics(md_accessor, input_stats)
     }
 }
 

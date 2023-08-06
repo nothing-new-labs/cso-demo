@@ -1,13 +1,13 @@
 mod logical_scan;
 
+use crate::metadata::MdAccessor;
 use crate::statistics::Statistics;
-use crate::OptimizerContext;
 use std::rc::Rc;
 
 pub trait LogicalOperator {
     fn name(&self) -> &str;
     fn operator_id(&self) -> i16;
-    fn derive_statistics(&self, _optimizer_ctx: &OptimizerContext, _input_stats: &[Rc<Statistics>]) -> Statistics;
+    fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics;
 }
 
 pub trait PhysicalOperator {

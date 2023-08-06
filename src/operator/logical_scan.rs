@@ -1,7 +1,6 @@
-use crate::metadata::MdId;
-use crate::operators::LogicalOperator;
+use crate::metadata::{MdAccessor, MdId};
+use crate::operator::LogicalOperator;
 use crate::statistics::Statistics;
-use crate::OptimizerContext;
 use std::rc::Rc;
 
 pub struct TableDesc {
@@ -27,10 +26,8 @@ impl LogicalOperator for LogicalScan {
         1
     }
 
-    fn derive_statistics(&self, optimizer_ctx: &OptimizerContext, input_stats: &[Rc<Statistics>]) -> Statistics {
+    fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics {
         debug_assert!(input_stats.is_empty());
-
-        let md_accessor = optimizer_ctx.md_accessor();
         md_accessor.derive_stats(self.table_desc.md_id())
     }
 }
