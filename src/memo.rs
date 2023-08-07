@@ -1,6 +1,7 @@
+use crate::operator::Operator;
 use crate::rule::Rule;
 use crate::statistics::Statistics;
-use crate::{LogicalPlan, Operator, Plan};
+use crate::{LogicalPlan, OptimizerContext, Plan};
 use bit_set::BitSet;
 use std::cell::RefCell;
 use std::rc::{Rc, Weak};
@@ -62,7 +63,7 @@ impl GroupPlan {
         self.stats_derived = true;
     }
 
-    pub fn derive_statistics(&self) -> Statistics {
+    pub fn derive_statistics(&self, optimizer_ctx: &OptimizerContext) -> Statistics {
         let mut input_stats = Vec::with_capacity(self.inputs.len());
 
         for input in &self.inputs {
@@ -72,7 +73,9 @@ impl GroupPlan {
             input_stats.push(stats.clone().unwrap());
         }
 
-        self.op.derive_statistics(input_stats.as_slice())
+        let md_accessor = optimizer_ctx.md_accessor();
+        let input_stats = input_stats.as_slice();
+        self.op.logical_op().derive_statistics(md_accessor, input_stats)
     }
 }
 
