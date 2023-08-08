@@ -1,3 +1,4 @@
+use crate::expression::ColumnVar;
 use crate::metadata::{MdAccessor, MdId};
 use crate::operator::LogicalOperator;
 use crate::statistics::Statistics;
@@ -15,6 +16,20 @@ impl TableDesc {
 
 pub struct LogicalScan {
     table_desc: TableDesc,
+    output_columns: Vec<ColumnVar>,
+}
+
+impl LogicalScan {
+    pub fn new(table_desc: TableDesc, output_columns: Vec<ColumnVar>) -> Self {
+        LogicalScan {
+            table_desc,
+            output_columns,
+        }
+    }
+
+    pub fn out_columns(&self) -> &[ColumnVar] {
+        &self.output_columns
+    }
 }
 
 impl LogicalOperator for LogicalScan {

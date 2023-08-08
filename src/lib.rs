@@ -5,9 +5,10 @@
 pub mod rule;
 
 mod datum;
+pub mod expression;
 mod memo;
 mod metadata;
-mod operator;
+pub mod operator;
 mod statistics;
 mod task;
 
@@ -17,9 +18,6 @@ use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::rule::RuleSet;
 use crate::task::{OptimizeGroupTask, Task, TaskRunner};
 use std::rc::Rc;
-
-pub trait ScalarExpression {}
-pub trait AggregateExpression {}
 
 pub struct LogicalPlan {
     op: Rc<dyn LogicalOperator>,
