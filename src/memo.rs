@@ -1,8 +1,9 @@
+use crate::cost::Cost;
 use crate::operator::Operator;
+use crate::property::PhysicalProperties;
 use crate::rule::Rule;
 use crate::statistics::Statistics;
 use crate::{LogicalPlan, OptimizerContext, Plan};
-use crate::{Cost, LogicalOperator, LogicalPlan, Operator, PhysicalProperties, Plan};
 use bit_set::BitSet;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -13,7 +14,7 @@ pub struct GroupPlan {
     op: Operator,
     inputs: Vec<GroupRef>,
     rule_masks: BitSet,
-    require_to_output_map: HashMap<PhysicalProperties, PhysicalProperties>,
+    require_to_output_map: HashMap<PhysicalProperties, Rc<PhysicalProperties>>,
     stats_derived: bool,
 }
 
@@ -82,8 +83,8 @@ impl GroupPlan {
         self.op.logical_op().derive_statistics(md_accessor, input_stats)
     }
 
-    pub fn get_output_prop(&self, reqd_prop: &PhysicalProperties) -> PhysicalProperties {
-        self.require_to_output_map.get(&reqd_prop).expect()
+    pub fn get_output_prop(&self, reqd_prop: &PhysicalProperties) -> &Rc<PhysicalProperties> {
+        self.require_to_output_map.get(reqd_prop).expect("output not null")
     }
 
     pub fn compute_cost(&self) -> Cost {
@@ -105,7 +106,7 @@ pub type GroupRef = Rc<RefCell<Group>>;
 pub type GroupWeakRef = Weak<RefCell<Group>>;
 
 impl Group {
-    const fn new(group_id: u32) -> Self {
+    fn new(group_id: u32) -> Self {
         Group {
             group_id,
             logical_plans: Vec::new(),
@@ -173,6 +174,10 @@ impl Group {
 
     pub fn lowest_cost_plans(&self) -> &HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)> {
         &self.lowest_cost_plans
+    }
+
+    pub fn lowest_cost_plans_mut(&mut self) -> &mut HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)> {
+        &mut self.lowest_cost_plans
     }
 }
 

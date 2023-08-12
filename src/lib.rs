@@ -5,102 +5,23 @@
 
 pub mod rule;
 
+pub mod cost;
 mod datum;
 pub mod expression;
 mod memo;
 mod metadata;
 pub mod operator;
+pub mod property;
 mod statistics;
 mod task;
 
-use std::hash::{Hash, Hasher};
 use crate::memo::{GroupPlanRef, Memo};
 use crate::metadata::MdAccessor;
 use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
+use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::RuleSet;
 use crate::task::{OptimizeGroupTask, Task, TaskRunner};
 use std::rc::Rc;
-
-pub trait LogicalOperator {
-    fn name(&self) -> &str;
-    fn operator_id(&self) -> i16;
-    fn derive_statistics(&self, _input_stats: &[Rc<Statistics>]) -> Statistics;
-}
-
-pub trait PhysicalOperator {
-    fn name(&self) -> &str;
-    fn operator_id(&self) -> i16;
-    fn derive_output_prop(&self, _: &Vec<&PhysicalProperties>) -> PhysicalProperties;
-}
-
-#[derive(Clone)]
-pub enum Operator {
-    Logical(Rc<dyn LogicalOperator>),
-    Physical(Rc<dyn PhysicalOperator>),
-}
-
-impl Operator {
-    #[inline]
-    pub fn is_logical(&self) -> bool {
-        match self {
-            Operator::Logical(_) => true,
-            Operator::Physical(_) => false,
-        }
-    }
-
-    #[inline]
-    pub fn is_physical(&self) -> bool {
-        match self {
-            Operator::Logical(_) => false,
-            Operator::Physical(_) => true,
-        }
-    }
-
-    #[inline]
-    pub fn derive_statistics(&self, input_stats: &[Rc<Statistics>]) -> Statistics {
-        match self {
-            Operator::Logical(op) => op.derive_statistics(input_stats),
-            Operator::Physical(_) => unreachable!("only logical operators can derive statistics"),
-        }
-    }
-
-    #[inline]
-    pub fn derive_output_prop(&self, input_props: &Vec<&PhysicalProperties>) -> PhysicalProperties {
-        match self {
-            Operator::Logical(_) => unreachable!("only physical operators can derive output props"),
-            Operator::Physical(op) => op.derive_output_prop(input_props),
-        }
-    }
-}
-
-pub struct SortOperator {
-    order_keys: Vec<Box <dyn ScalarExpression>>,
-}
-
-impl PhysicalOperator for SortOperator {
-    fn name(&self) -> &str {
-        "SortOperator"
-    }
-
-    fn operator_id(&self) -> i16 {
-        todo!()
-    }
-
-    fn derive_output_prop(&self, _: &Vec<&PhysicalProperties>) -> PhysicalProperties {
-        todo!()
-    }
-}
-
-impl SortOperator {
-    pub fn new(input_order_keys: Vec<Box<dyn ScalarExpression>>) -> SortOperator {
-        SortOperator {
-            order_keys: input_order_keys,
-        }
-    }
-}
-
-pub trait ScalarExpression : Clone + Hash + PartialEq + Eq {}
-pub trait AggregateExpression {}
 
 pub struct LogicalPlan {
     op: Rc<dyn LogicalOperator>,
@@ -146,79 +67,6 @@ impl Plan {
     }
 }
 
-pub trait Property {}
-pub trait LogicalProperty: Property {}
-pub trait PhysicalProperty: Property {
-    fn satisfy(&self, _input: PhysicalProperties) -> bool where Self: Sized {
-        true
-    }
-    fn add_enforcer(&self, physical_op: Operator, inputs: Vec<Plan>) -> Plan where Self: Sized {
-        Plan::new(physical_op, inputs)
-    }
-}
-
-#[derive(PartialEq, PartialOrd)]
-pub struct Cost {
-    _cost: f64,
-}
-
-impl Cost {
-    pub const fn new() -> Cost {
-        Cost { _cost : 0.0 }
-    }
-}
-pub struct LogicalProperties {}
-
-#[derive(Clone, Eq, Hash, PartialEq)]
-pub struct PhysicalProperties {
-    _order_spec: SortProperty,
-}
-
-impl PhysicalProperties {
-    pub fn new() -> PhysicalProperties {
-        PhysicalProperties {
-            _order_spec: SortProperty::new(),
-        }
-    }
-
-    pub fn satisfy(&self, required_prop: &PhysicalProperties) -> bool {
-        todo!()
-    }
-}
-
-#[derive(Clone, Hash, Eq)]
-pub struct SortProperty {
-    _order_keys: Vec<Box<dyn ScalarExpression>>,
-}
-
-impl PartialEq for SortProperty {
-    fn eq(&self, other: &Self) -> bool {
-        todo!()
-    }
-}
-
-impl Property for SortProperty {}
-
-impl PhysicalProperty for SortProperty {
-    fn satisfy(&self, intput: PhysicalProperties) -> bool {
-        todo!()
-    }
-
-    fn add_enforcer(&self, physical_op: Operator, inputs: Vec<Plan>) -> Plan {
-        todo!()
-    }
-}
-
-impl SortProperty {
-    pub fn new() -> SortProperty {
-        SortProperty { _order_keys: vec![] }
-    }
-
-    pub fn make_plan(self, inputs: Vec<Plan>) -> Plan {
-        todo!()
-    }
-}
-
 pub struct Options {}
 
 pub struct Optimizer {
@@ -233,7 +81,7 @@ impl Optimizer {
     pub fn optimize(
         &mut self,
         plan: LogicalPlan,
-        _required_properties: PhysicalProperties,
+        required_properties: PhysicalProperties,
         md_accessor: MdAccessor,
     ) -> PhysicalPlan {
         let mut optimizer_ctx = OptimizerContext::new(md_accessor);

@@ -1,5 +1,6 @@
 use crate::expression::ScalarExpression;
 use crate::operator::PhysicalOperator;
+use crate::property::PhysicalProperties;
 use std::rc::Rc;
 
 pub struct PhysicalFilter {
@@ -24,5 +25,9 @@ impl PhysicalOperator for PhysicalFilter {
 
     fn operator_id(&self) -> i16 {
         5
+    }
+
+    fn derive_output_prop(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
+        todo!()
     }
 }

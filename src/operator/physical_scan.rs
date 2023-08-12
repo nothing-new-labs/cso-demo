@@ -1,6 +1,8 @@
 use crate::expression::ColumnVar;
 use crate::operator::logical_scan::TableDesc;
 use crate::operator::PhysicalOperator;
+use crate::property::PhysicalProperties;
+use std::rc::Rc;
 
 pub struct PhysicalScan {
     _table_desc: TableDesc,
@@ -23,5 +25,9 @@ impl PhysicalOperator for PhysicalScan {
 
     fn operator_id(&self) -> i16 {
         4
+    }
+
+    fn derive_output_prop(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
+        todo!()
     }
 }

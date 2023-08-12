@@ -1,8 +1,8 @@
 use crate::memo::{GroupPlan, GroupPlanRef, GroupRef};
+use crate::property::PhysicalProperties;
 use crate::rule::{Binding, RuleRef, RuleSet};
-use crate::{OptimizerContext, PhysicalProperties};
-use std::ops::{Deref, Index};
-use std::path::is_separator;
+use crate::OptimizerContext;
+use std::ops::Deref;
 use std::rc::Rc;
 
 pub enum Task {
@@ -67,22 +67,30 @@ pub struct OptimizeGroupTask {
 
 impl OptimizeGroupTask {
     pub const fn new(group: GroupRef, required_prop: PhysicalProperties) -> Self {
-        OptimizeGroupTask { group, required_prop, is_explored: false }
+        OptimizeGroupTask {
+            group,
+            required_prop,
+            is_explored: false,
+        }
+    }
+
+    fn is_explored(&self) -> bool {
+        self.is_explored
     }
 
     fn execute(mut self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
         let group = self.group.borrow();
 
-        if !is_explored {
+        if !self.is_explored() {
             for plan in group.logical_plans().iter().rev() {
                 let task = OptimizePlanTask::new(plan.clone());
                 task_runner.push_task(Task::OptimizePlan(task));
             }
             self.is_explored = true;
         }
-        
+
         for plan in group.physical_plans().iter().rev() {
-            let task = EnforceAndCostTask::new(plan.clone(), self.required_prop.clone());
+            let task = EnforceAndCostTask::new(plan.clone(), Rc::new(self.required_prop.clone()));
             task_runner.push_task(Task::EnforceAndCost(task));
         }
     }
@@ -139,7 +147,7 @@ impl OptimizePlanTask {
 pub struct EnforceAndCostTask {
     plan: GroupPlanRef,
     required_prop: Rc<PhysicalProperties>,
-    prev_index:
+    prev_index: usize,
 }
 
 impl Clone for EnforceAndCostTask {
@@ -150,83 +158,87 @@ impl Clone for EnforceAndCostTask {
 
 impl EnforceAndCostTask {
     pub const fn new(new_plan: GroupPlanRef, new_required_prop: Rc<PhysicalProperties>) -> Self {
-        EnforceAndCostTask{ plan: new_plan, required_prop: new_required_prop }
+        EnforceAndCostTask {
+            plan: new_plan,
+            required_prop: new_required_prop,
+            prev_index: 0,
+        }
     }
 
     fn make_required_props_list(&self) -> Vec<Vec<PhysicalProperties>> {
-        op.get_reqd_prop()
+        self.plan.borrow().operator().get_reqd_prop()
     }
 
-    fn add_enforcer_to_group(&self, output_prop: &PhysicalProperties) -> GroupPlanRef {
+    fn add_enforcer_to_group(&self, _output_prop: &PhysicalProperties) -> &GroupPlanRef {
         // add enforcer according to different specifications
         todo!()
         // let plan = output_prop.order_property.add_enforcer();
     }
 
-    fn submit_cost_plan(&self, child_output_props: Vec<PhysicalProperties>) {
-        let mut curr_plan = &self.plan.borrow();
-        let output_prop = curr_plan.operator().derive_output_prop(&child_output_props);
-        let prop = PhysicalProperties::new();
+    fn prev_index(&self) -> usize {
+        self.prev_index
+    }
 
-        let mut curr_cost = curr_plan.compute_cost();
+    fn submit_cost_plan(&self, child_output_props: &[Rc<PhysicalProperties>]) {
+        let mut curr_plan = &self.plan;
+        let output_prop = curr_plan.borrow().operator().derive_output_prop(child_output_props);
+
+        let mut curr_cost = curr_plan.borrow().compute_cost();
         if !output_prop.satisfy(&self.required_prop) {
             // add enforcer
-            curr_plan = self.add_enforcer_to_group(output_prop);
-            curr_cost = curr_plan.compute_cost();
+            curr_plan = self.add_enforcer_to_group(&output_prop);
+            curr_cost = curr_plan.borrow().compute_cost();
         }
         match curr_plan
+            .borrow()
             .group()
             .borrow()
             .lowest_cost_plans()
-            .get(&self.required_prop) {
+            .get(&self.required_prop)
+        {
             None => {}
             Some((cost, _group_plan)) => {
                 // if current cost is larger, do nothing
-                if curr_cost >= cost {
+                if curr_cost.cost_value() >= cost.cost_value() {
                     return;
                 }
             }
         }
         // update lowest_cost_plans
         curr_plan
+            .borrow_mut()
             .group()
-            .borrow()
-            .lowest_cost_plans()
-            .insert(self.required_prop.clone(), (curr_cost, curr_plan));
-        // todo requst_prop need rc clone
+            .borrow_mut()
+            .lowest_cost_plans_mut()
+            .insert(self.required_prop.clone(), (curr_cost, (*curr_plan).clone()));
     }
 
     /**
-     * 1. make require properties for children base of current operator
+     * 1. make require property for children base of current operator
      * 2. try to optimize child group and get best (Cost, GroupPlan) pair of every children
-     * 3. once we get all output properties of one candidate loop, derive output properties base of current operator
-     * 4. if output properties does not satisfied require properties, add enforcers and submit (Cost, GroupPlan) pair
+     * 3. once we get all output property of one candidate loop, derive output property base of current operator
+     * 4. if output property does not satisfied require property, add enforcers and submit (Cost, GroupPlan) pair
      */
-    fn execute(self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
+    fn execute(mut self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
         // 1. according to current operator create new requestPropList for children
         let reqd_props_list = self.make_required_props_list();
-        for required_props in reqd_props_list.iter() {
+        for (index, required_props) in reqd_props_list.iter().enumerate() {
             let mut child_output_props = Vec::new();
+            if index < self.prev_index() {
+                continue;
+            }
             for (required_prop, child_group) in required_props.iter().zip(self.plan.borrow().inputs()) {
                 // 2. optimize children groups using requestPropList
-                match child_group
-                    .borrow()
-                    .lowest_cost_plans()
-                    .get(required_prop) {
+                match child_group.borrow().lowest_cost_plans().get(required_prop) {
                     Some((_cost, plan)) => {
-                        match plan.borrow().get_output_prop(&required_prop) {
-                            None => {
-                                // remove current candidate and parsed to next one
-                            }
-                            Some(output) => {
-                                child_output_props.push(output);
-                            }
-                        };
+                        // add life time parameter let output life time equals to self
+                        let output = plan.borrow().get_output_prop(required_prop).clone();
+                        child_output_props.push(output);
                     }
                     None => {
-                        // 3. get output properties of child groups and add enforcer to cost and plan pair
+                        // 3. get output property of child groups and add enforcer to cost and plan pair
                         task_runner.push_task(Task::EnforceAndCost(self.clone()));
-                        let task = OptimizeGroupTask::new(child_group.clone(), required_props[required_prop_index].clone());
+                        let task = OptimizeGroupTask::new(child_group.clone(), required_prop.clone());
                         task_runner.push_task(Task::OptimizeGroup(task));
                         return;
                     }
@@ -235,7 +247,8 @@ impl EnforceAndCostTask {
             // 4. now assume we have optimize child groups for required_props and get one best cost and plan pairs
             // and we want to compare require_prop and output_prop derived by child output props
             // if do not satisfy, add enforcer
-            self.submit_cost_plan(child_output_props);
+            self.prev_index = index;
+            self.submit_cost_plan(&child_output_props);
         }
     }
 }
@@ -274,8 +287,8 @@ impl ApplyRuleTask {
             if group_plan.borrow().operator().is_logical() {
                 task_runner.push_task(Task::OptimizePlan(OptimizePlanTask::new(group_plan)));
             } else {
-                let required_prop: PhysicalProperties;
-                let new_task = EnforceAndCostTask::new(group_plan, required_prop.clone());
+                let required_prop: PhysicalProperties = PhysicalProperties::new();
+                let new_task = EnforceAndCostTask::new(group_plan, Rc::new(required_prop.clone()));
                 task_runner.push_task(Task::EnforceAndCost(new_task));
             }
         }
