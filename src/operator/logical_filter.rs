@@ -9,7 +9,8 @@ pub struct LogicalFilter {
 }
 
 impl LogicalFilter {
-    pub const fn new(predicate: Box<dyn ScalarExpression>) -> Self {
+    pub fn new(predicate: Box<dyn ScalarExpression>) -> Self {
+        assert!(predicate.is_boolean_expression());
         LogicalFilter { predicate }
     }
 
@@ -27,7 +28,8 @@ impl LogicalOperator for LogicalFilter {
         2
     }
 
-    fn derive_statistics(&self, _md_accessor: &MdAccessor, _input_stats: &[Rc<Statistics>]) -> Statistics {
-        todo!()
+    fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics {
+        // TODO: filter selectivity
+        (*input_stats[0]).clone()
     }
 }

@@ -5,11 +5,11 @@ use crate::statistics::Statistics;
 use std::rc::Rc;
 
 pub struct LogicalProject {
-    _project: Box<dyn ScalarExpression>,
+    _project: Vec<Box<dyn ScalarExpression>>,
 }
 
 impl LogicalProject {
-    pub fn new(project: Box<dyn ScalarExpression>) -> Self {
+    pub fn new(project: Vec<Box<dyn ScalarExpression>>) -> Self {
         LogicalProject { _project: project }
     }
 }
@@ -23,7 +23,8 @@ impl LogicalOperator for LogicalProject {
         3
     }
 
-    fn derive_statistics(&self, _md_accessor: &MdAccessor, _input_stats: &[Rc<Statistics>]) -> Statistics {
-        todo!()
+    fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics {
+        // TODO: projection stats
+        (*input_stats[0]).clone()
     }
 }

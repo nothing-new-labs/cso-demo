@@ -1,6 +1,7 @@
 use crate::datum::Datum;
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub struct Bucket {
     _lower: Datum,      // Lower bound value of the bucket.
     _upper: Datum,      // Upper bound value of the bucket.
@@ -9,6 +10,7 @@ pub struct Bucket {
 }
 
 /// A histogram is a representation of the distribution of a column.
+#[derive(Clone)]
 pub struct Histogram {
     _buckets: Vec<Bucket>,
 }
@@ -16,6 +18,7 @@ pub struct Histogram {
 pub type ColumnIndex = usize;
 
 /// Statistics information of a column
+#[derive(Clone)]
 pub struct ColumnStat {
     _min: Datum,      // Min value of the column
     _max: Datum,      // Max value of the column
@@ -27,6 +30,7 @@ pub struct ColumnStat {
 
 pub type ColumnStatSet = HashMap<ColumnIndex, ColumnStat>;
 
+#[derive(Clone)]
 pub struct Statistics {
     output_row_count: usize,
 

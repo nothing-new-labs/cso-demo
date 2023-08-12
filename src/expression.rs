@@ -1,6 +1,12 @@
-pub trait ScalarExpression {}
+pub trait ScalarExpression {
+    fn is_boolean_expression(&self) -> bool {
+        false
+    }
+}
+
 pub trait AggregateExpression {}
 
+#[derive(Eq, PartialEq)]
 #[repr(transparent)]
 pub struct ColumnVar {
     id: i32,

@@ -2,11 +2,11 @@ use crate::expression::ScalarExpression;
 use crate::operator::PhysicalOperator;
 
 pub struct PhysicalProject {
-    _project: Box<dyn ScalarExpression>,
+    _project: Vec<Box<dyn ScalarExpression>>,
 }
 
 impl PhysicalProject {
-    pub fn new(project: Box<dyn ScalarExpression>) -> Self {
+    pub fn new(project: Vec<Box<dyn ScalarExpression>>) -> Self {
         PhysicalProject { _project: project }
     }
 }

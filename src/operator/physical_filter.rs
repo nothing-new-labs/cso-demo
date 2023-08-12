@@ -6,7 +6,8 @@ pub struct PhysicalFilter {
 }
 
 impl PhysicalFilter {
-    pub const fn new(predicate: Box<dyn ScalarExpression>) -> Self {
+    pub fn new(predicate: Box<dyn ScalarExpression>) -> Self {
+        assert!(predicate.is_boolean_expression());
         PhysicalFilter { predicate }
     }
 
