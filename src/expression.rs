@@ -6,7 +6,7 @@ pub trait ScalarExpression {
 
 pub trait AggregateExpression {}
 
-#[derive(Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 #[repr(transparent)]
 pub struct ColumnVar {
     id: i32,

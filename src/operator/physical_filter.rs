@@ -1,12 +1,13 @@
 use crate::expression::ScalarExpression;
 use crate::operator::PhysicalOperator;
+use std::rc::Rc;
 
 pub struct PhysicalFilter {
-    predicate: Box<dyn ScalarExpression>,
+    predicate: Rc<dyn ScalarExpression>,
 }
 
 impl PhysicalFilter {
-    pub fn new(predicate: Box<dyn ScalarExpression>) -> Self {
+    pub fn new(predicate: Rc<dyn ScalarExpression>) -> Self {
         assert!(predicate.is_boolean_expression());
         PhysicalFilter { predicate }
     }

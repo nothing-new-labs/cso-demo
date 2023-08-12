@@ -2,26 +2,31 @@ use crate::expression::ScalarExpression;
 use crate::metadata::MdAccessor;
 use crate::operator::LogicalOperator;
 use crate::statistics::Statistics;
+use std::any::Any;
 use std::rc::Rc;
 
 pub struct LogicalFilter {
-    predicate: Box<dyn ScalarExpression>,
+    predicate: Rc<dyn ScalarExpression>,
 }
 
 impl LogicalFilter {
-    pub fn new(predicate: Box<dyn ScalarExpression>) -> Self {
+    pub fn new(predicate: Rc<dyn ScalarExpression>) -> Self {
         assert!(predicate.is_boolean_expression());
         LogicalFilter { predicate }
     }
 
-    pub fn predicate(&self) -> &dyn ScalarExpression {
-        &*self.predicate
+    pub fn predicate(&self) -> &Rc<dyn ScalarExpression> {
+        &self.predicate
     }
 }
 
 impl LogicalOperator for LogicalFilter {
     fn name(&self) -> &str {
         "logical filter"
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn operator_id(&self) -> i16 {

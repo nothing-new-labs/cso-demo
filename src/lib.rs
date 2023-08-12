@@ -30,6 +30,7 @@ pub struct PhysicalPlan {
     _inputs: Vec<PhysicalPlan>,
 }
 
+#[derive(Clone)]
 pub struct Plan {
     op: Operator,
     inputs: Vec<Plan>,
@@ -56,13 +57,19 @@ impl Plan {
     pub fn group_plan(&self) -> Option<&GroupPlanRef> {
         self.group_plan.as_ref()
     }
+
+    pub fn operator(&self) -> &Operator {
+        &self.op
+    }
 }
 
 pub trait Property {}
 pub trait LogicalProperty: Property {}
 pub trait PhysicalProperty: Property {}
 
+#[derive(Clone)]
 pub struct LogicalProperties {}
+#[derive(Clone)]
 pub struct PhysicalProperties {}
 
 pub struct Options {}

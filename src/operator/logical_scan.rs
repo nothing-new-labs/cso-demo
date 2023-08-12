@@ -2,8 +2,10 @@ use crate::expression::ColumnVar;
 use crate::metadata::{MdAccessor, MdId};
 use crate::operator::LogicalOperator;
 use crate::statistics::Statistics;
+use std::any::Any;
 use std::rc::Rc;
 
+#[derive(Clone)]
 pub struct TableDesc {
     md_id: MdId,
 }
@@ -27,7 +29,11 @@ impl LogicalScan {
         }
     }
 
-    pub fn out_columns(&self) -> &[ColumnVar] {
+    pub fn table_desc(&self) -> &TableDesc {
+        &self.table_desc
+    }
+
+    pub fn output_columns(&self) -> &[ColumnVar] {
         &self.output_columns
     }
 }
@@ -35,6 +41,10 @@ impl LogicalScan {
 impl LogicalOperator for LogicalScan {
     fn name(&self) -> &str {
         "logical get"
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn operator_id(&self) -> i16 {

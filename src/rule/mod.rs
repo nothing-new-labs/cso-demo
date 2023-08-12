@@ -1,5 +1,10 @@
+pub mod implementation;
+
 use crate::memo::{Group, GroupPlan, GroupPlanRef};
 use crate::operator::Operator;
+use crate::rule::implementation::filter::FilterImplementation;
+use crate::rule::implementation::project::ProjectImplementation;
+use crate::rule::implementation::scan::ScanImplementation;
 use crate::{OptimizerContext, Plan};
 use std::any::Any;
 use std::ops::Deref;
@@ -24,6 +29,10 @@ impl Pattern {
             pattern_type,
             children: Vec::new(),
         }
+    }
+
+    pub const fn with_children(pattern_type: PatternType, children: Vec<Pattern>) -> Self {
+        Pattern { pattern_type, children }
     }
 
     pub fn children(&self) -> &[Pattern] {
@@ -75,8 +84,11 @@ pub trait Rule: Any {
     fn name(&self) -> &str;
     fn rule_id(&self) -> u16;
     fn pattern(&self) -> &Pattern;
-    fn check(&self, input: &Plan, context: &OptimizerContext) -> bool;
     fn transform(&self, input: &Plan, context: &mut OptimizerContext) -> Vec<Plan>;
+
+    fn check(&self, _input: &Plan, _context: &OptimizerContext) -> bool {
+        true
+    }
 
     fn promise(&self) -> i32 {
         1
@@ -100,10 +112,14 @@ pub struct RuleSet {
 }
 
 impl RuleSet {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         RuleSet {
             transform_rules: vec![],
-            implement_rules: vec![],
+            implement_rules: vec![
+                Rc::new(ScanImplementation::new()),
+                Rc::new(FilterImplementation::new()),
+                Rc::new(ProjectImplementation::new()),
+            ],
         }
     }
 

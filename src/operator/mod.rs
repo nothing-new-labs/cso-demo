@@ -8,15 +8,17 @@ pub mod physical_topn;
 
 use crate::metadata::MdAccessor;
 use crate::statistics::Statistics;
+use std::any::Any;
 use std::rc::Rc;
 
-pub trait LogicalOperator {
+pub trait LogicalOperator: Any {
     fn name(&self) -> &str;
+    fn as_any(&self) -> &dyn Any;
     fn operator_id(&self) -> i16;
     fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics;
 }
 
-pub trait PhysicalOperator {
+pub trait PhysicalOperator: Any {
     fn name(&self) -> &str;
     fn operator_id(&self) -> i16;
 }
