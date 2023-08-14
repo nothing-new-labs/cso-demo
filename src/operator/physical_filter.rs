@@ -13,7 +13,7 @@ impl PhysicalFilter {
     }
 
     pub fn predicate(&self) -> &dyn ScalarExpression {
-        &*self.predicate
+        self.predicate.as_ref()
     }
 }
 
