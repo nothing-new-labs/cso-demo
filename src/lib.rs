@@ -1,13 +1,15 @@
 //! A cascade style optimizer
 
 #![forbid(unsafe_code)]
+#![allow(clippy::new_without_default)]
 
 pub mod rule;
 
 mod datum;
+pub mod expression;
 mod memo;
 mod metadata;
-mod operator;
+pub mod operator;
 mod statistics;
 mod task;
 
@@ -17,9 +19,6 @@ use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::rule::RuleSet;
 use crate::task::{OptimizeGroupTask, Task, TaskRunner};
 use std::rc::Rc;
-
-pub trait ScalarExpression {}
-pub trait AggregateExpression {}
 
 pub struct LogicalPlan {
     op: Rc<dyn LogicalOperator>,
@@ -32,6 +31,7 @@ pub struct PhysicalPlan {
     _inputs: Vec<PhysicalPlan>,
 }
 
+#[derive(Clone)]
 pub struct Plan {
     op: Operator,
     inputs: Vec<Plan>,
@@ -58,13 +58,19 @@ impl Plan {
     pub fn group_plan(&self) -> Option<&GroupPlanRef> {
         self.group_plan.as_ref()
     }
+
+    pub fn operator(&self) -> &Operator {
+        &self.op
+    }
 }
 
 pub trait Property {}
 pub trait LogicalProperty: Property {}
 pub trait PhysicalProperty: Property {}
 
+#[derive(Clone)]
 pub struct LogicalProperties {}
+#[derive(Clone)]
 pub struct PhysicalProperties {}
 
 pub struct Options {}
