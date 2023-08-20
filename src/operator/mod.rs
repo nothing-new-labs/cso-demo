@@ -7,6 +7,7 @@ pub mod physical_scan;
 pub mod physical_topn;
 
 use crate::metadata::MdAccessor;
+use crate::property::PhysicalProperties;
 use crate::statistics::Statistics;
 use std::any::Any;
 use std::rc::Rc;
@@ -21,6 +22,8 @@ pub trait LogicalOperator: Any {
 pub trait PhysicalOperator: Any {
     fn name(&self) -> &str;
     fn operator_id(&self) -> i16;
+    fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> PhysicalProperties;
+    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>>;
 }
 
 #[derive(Clone)]

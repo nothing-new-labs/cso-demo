@@ -1,5 +1,6 @@
 use crate::expression::ScalarExpression;
 use crate::operator::PhysicalOperator;
+use crate::property::PhysicalProperties;
 use std::rc::Rc;
 
 pub struct PhysicalProject {
@@ -19,5 +20,13 @@ impl PhysicalOperator for PhysicalProject {
 
     fn operator_id(&self) -> i16 {
         6
+    }
+
+    fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
+        todo!()
+    }
+
+    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>> {
+        todo!()
     }
 }

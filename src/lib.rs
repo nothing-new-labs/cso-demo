@@ -5,17 +5,20 @@
 
 pub mod rule;
 
+pub mod cost;
 mod datum;
 pub mod expression;
 mod memo;
 mod metadata;
 pub mod operator;
+pub mod property;
 mod statistics;
 mod task;
 
 use crate::memo::{GroupPlanRef, Memo};
 use crate::metadata::MdAccessor;
 use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
+use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::RuleSet;
 use crate::task::{OptimizeGroupTask, Task, TaskRunner};
 use std::rc::Rc;
@@ -64,15 +67,6 @@ impl Plan {
     }
 }
 
-pub trait Property {}
-pub trait LogicalProperty: Property {}
-pub trait PhysicalProperty: Property {}
-
-#[derive(Clone)]
-pub struct LogicalProperties {}
-#[derive(Clone)]
-pub struct PhysicalProperties {}
-
 pub struct Options {}
 
 pub struct Optimizer {
@@ -87,13 +81,14 @@ impl Optimizer {
     pub fn optimize(
         &mut self,
         plan: LogicalPlan,
-        _required_properties: PhysicalProperties,
+        required_properties: PhysicalProperties,
         md_accessor: MdAccessor,
     ) -> PhysicalPlan {
         let mut optimizer_ctx = OptimizerContext::new(md_accessor);
         optimizer_ctx.memo_mut().init(plan);
         let mut task_runner = TaskRunner::new();
-        let initial_task = OptimizeGroupTask::new(optimizer_ctx.memo().root_group().clone());
+        let initial_task =
+            OptimizeGroupTask::new(optimizer_ctx.memo().root_group().clone(), Rc::new(required_properties));
         task_runner.push_task(Task::OptimizeGroup(initial_task));
         task_runner.run(&mut optimizer_ctx);
         todo!()

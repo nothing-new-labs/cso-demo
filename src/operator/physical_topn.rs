@@ -1,12 +1,16 @@
 use crate::expression::ColumnVar;
 use crate::operator::PhysicalOperator;
+use crate::property::PhysicalProperties;
+use std::rc::Rc;
 
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct Ordering {
     pub key: ColumnVar,
     pub ascending: bool,
     pub nulls_first: bool,
 }
 
+#[derive(Clone, Hash, Eq, PartialEq)]
 pub struct OrderSpec {
     pub order_desc: Vec<Ordering>,
 }
@@ -46,5 +50,13 @@ impl PhysicalOperator for PhysicalTopN {
 
     fn operator_id(&self) -> i16 {
         7
+    }
+
+    fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
+        todo!()
+    }
+
+    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>> {
+        todo!()
     }
 }

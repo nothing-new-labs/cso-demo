@@ -1,16 +1,22 @@
+use crate::cost::Cost;
 use crate::operator::Operator;
+use crate::property::PhysicalProperties;
 use crate::rule::Rule;
 use crate::statistics::Statistics;
 use crate::{LogicalPlan, OptimizerContext, Plan};
 use bit_set::BitSet;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::{Rc, Weak};
+
+type RequireToOutputMap = HashMap<PhysicalProperties, Rc<PhysicalProperties>>;
 
 pub struct GroupPlan {
     group: GroupWeakRef,
     op: Operator,
     inputs: Vec<GroupRef>,
     rule_masks: BitSet,
+    require_to_output_map: RequireToOutputMap,
     stats_derived: bool,
 }
 
@@ -23,6 +29,7 @@ impl GroupPlan {
             op,
             inputs,
             rule_masks: BitSet::new(),
+            require_to_output_map: HashMap::new(),
             stats_derived: false,
         }
     }
@@ -77,7 +84,18 @@ impl GroupPlan {
         let input_stats = input_stats.as_slice();
         self.op.logical_op().derive_statistics(md_accessor, input_stats)
     }
+
+    pub fn get_output_prop(&self, reqd_prop: &PhysicalProperties) -> &Rc<PhysicalProperties> {
+        self.require_to_output_map.get(reqd_prop).expect("output not null")
+    }
+
+    pub fn compute_cost(&self) -> Cost {
+        // todo: add compute cost to operator
+        Cost::new()
+    }
 }
+
+type LowestCostPlans = HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)>;
 
 pub struct Group {
     group_id: u32,
@@ -85,19 +103,21 @@ pub struct Group {
     physical_plans: Vec<GroupPlanRef>,
     is_explored: bool,
     statistics: Option<Rc<Statistics>>,
+    lowest_cost_plans: LowestCostPlans,
 }
 
 pub type GroupRef = Rc<RefCell<Group>>;
 pub type GroupWeakRef = Weak<RefCell<Group>>;
 
 impl Group {
-    const fn new(group_id: u32) -> Self {
+    fn new(group_id: u32) -> Self {
         Group {
             group_id,
             logical_plans: Vec::new(),
             physical_plans: Vec::new(),
             is_explored: false,
             statistics: None,
+            lowest_cost_plans: HashMap::new(),
         }
     }
 
@@ -155,6 +175,31 @@ impl Group {
     pub fn statistics(&self) -> &Option<Rc<Statistics>> {
         &self.statistics
     }
+
+    pub fn lowest_cost_plans(&self) -> &HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)> {
+        &self.lowest_cost_plans
+    }
+
+    pub fn lowest_cost_plans_mut(&mut self) -> &mut HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)> {
+        &mut self.lowest_cost_plans
+    }
+
+    pub fn update_cost_plan(
+        &mut self,
+        required_prop: &Rc<PhysicalProperties>,
+        curr_plan: &GroupPlanRef,
+        curr_cost: Cost,
+    ) {
+        if let Some((cost, _group_plan)) = self.lowest_cost_plans.get(required_prop) {
+            // if current cost is larger, do nothing
+            if curr_cost.value() >= cost.value() {
+                return;
+            }
+        }
+        // update lowest_cost_plans
+        self.lowest_cost_plans
+            .insert(required_prop.clone(), (curr_cost, curr_plan.clone()));
+    }
 }
 
 pub struct Memo {
@@ -206,7 +251,7 @@ impl Memo {
         group
     }
 
-    fn insert_group_plan(&mut self, plan: GroupPlan, target_group: Option<GroupRef>) -> GroupPlanRef {
+    pub fn insert_group_plan(&mut self, plan: GroupPlan, target_group: Option<GroupRef>) -> GroupPlanRef {
         let target_group = match target_group {
             None => self.new_group(),
             Some(group) => group,
