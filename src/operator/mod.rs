@@ -11,7 +11,6 @@ use crate::property::PhysicalProperties;
 use crate::statistics::Statistics;
 use std::any::Any;
 use std::rc::Rc;
-use std::todo;
 
 pub trait LogicalOperator: Any {
     fn name(&self) -> &str;
@@ -23,7 +22,8 @@ pub trait LogicalOperator: Any {
 pub trait PhysicalOperator: Any {
     fn name(&self) -> &str;
     fn operator_id(&self) -> i16;
-    fn derive_output_prop(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties;
+    fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> PhysicalProperties;
+    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>>;
 }
 
 #[derive(Clone)]
@@ -63,18 +63,5 @@ impl Operator {
             Operator::Logical(_) => unreachable!("expect physical operator"),
             Operator::Physical(op) => op,
         }
-    }
-
-    #[inline]
-    pub fn derive_output_prop(&self, input_props: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
-        match self {
-            Operator::Logical(_) => unreachable!("only physical operators can derive output props"),
-            Operator::Physical(op) => op.derive_output_prop(input_props),
-        }
-    }
-
-    #[inline]
-    pub fn get_reqd_prop(&self) -> Vec<Vec<PhysicalProperties>> {
-        todo!()
     }
 }

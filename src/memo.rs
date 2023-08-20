@@ -9,12 +9,14 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
+type RequireToOutputMap = HashMap<PhysicalProperties, Rc<PhysicalProperties>>;
+
 pub struct GroupPlan {
     group: GroupWeakRef,
     op: Operator,
     inputs: Vec<GroupRef>,
     rule_masks: BitSet,
-    require_to_output_map: HashMap<PhysicalProperties, Rc<PhysicalProperties>>,
+    require_to_output_map: RequireToOutputMap,
     stats_derived: bool,
 }
 
@@ -93,13 +95,15 @@ impl GroupPlan {
     }
 }
 
+type LowestCostPlans = HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)>;
+
 pub struct Group {
     group_id: u32,
     logical_plans: Vec<GroupPlanRef>,
     physical_plans: Vec<GroupPlanRef>,
     is_explored: bool,
     statistics: Option<Rc<Statistics>>,
-    lowest_cost_plans: HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)>,
+    lowest_cost_plans: LowestCostPlans,
 }
 
 pub type GroupRef = Rc<RefCell<Group>>;
@@ -179,6 +183,23 @@ impl Group {
     pub fn lowest_cost_plans_mut(&mut self) -> &mut HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)> {
         &mut self.lowest_cost_plans
     }
+
+    pub fn update_cost_plan(
+        &mut self,
+        required_prop: &Rc<PhysicalProperties>,
+        curr_plan: &GroupPlanRef,
+        curr_cost: Cost,
+    ) {
+        if let Some((cost, _group_plan)) = self.lowest_cost_plans.get(required_prop) {
+            // if current cost is larger, do nothing
+            if curr_cost.value() >= cost.value() {
+                return;
+            }
+        }
+        // update lowest_cost_plans
+        self.lowest_cost_plans
+            .insert(required_prop.clone(), (curr_cost, curr_plan.clone()));
+    }
 }
 
 pub struct Memo {
@@ -230,7 +251,7 @@ impl Memo {
         group
     }
 
-    fn insert_group_plan(&mut self, plan: GroupPlan, target_group: Option<GroupRef>) -> GroupPlanRef {
+    pub fn insert_group_plan(&mut self, plan: GroupPlan, target_group: Option<GroupRef>) -> GroupPlanRef {
         let target_group = match target_group {
             None => self.new_group(),
             Some(group) => group,

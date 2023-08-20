@@ -22,7 +22,11 @@ impl PhysicalOperator for PhysicalProject {
         6
     }
 
-    fn derive_output_prop(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
+    fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
+        todo!()
+    }
+
+    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>> {
         todo!()
     }
 }
