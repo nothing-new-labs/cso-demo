@@ -32,12 +32,7 @@ impl Rule for ProjectImplementation {
     }
 
     fn transform(&self, input: &Plan, _context: &mut OptimizerContext) -> Vec<Plan> {
-        let logical_project = input
-            .operator()
-            .logical_op()
-            .as_any()
-            .downcast_ref::<LogicalProject>()
-            .unwrap();
+        let logical_project = input.operator().logical_op().downcast_ref::<LogicalProject>().unwrap();
         let physical_project = PhysicalProject::new(logical_project.project().to_vec());
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_project)),

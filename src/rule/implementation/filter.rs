@@ -31,12 +31,7 @@ impl Rule for FilterImplementation {
     }
 
     fn transform(&self, input: &Plan, _context: &mut OptimizerContext) -> Vec<Plan> {
-        let logical_filter = input
-            .operator()
-            .logical_op()
-            .as_any()
-            .downcast_ref::<LogicalFilter>()
-            .unwrap();
+        let logical_filter = input.operator().logical_op().downcast_ref::<LogicalFilter>().unwrap();
         let physical_filter = PhysicalFilter::new(logical_filter.predicate().clone());
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_filter)),

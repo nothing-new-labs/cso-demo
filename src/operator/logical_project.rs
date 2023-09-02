@@ -2,7 +2,6 @@ use crate::expression::ScalarExpression;
 use crate::metadata::MdAccessor;
 use crate::operator::LogicalOperator;
 use crate::statistics::Statistics;
-use std::any::Any;
 use std::rc::Rc;
 
 pub struct LogicalProject {
@@ -22,10 +21,6 @@ impl LogicalProject {
 impl LogicalOperator for LogicalProject {
     fn name(&self) -> &str {
         "logical project"
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 
     fn operator_id(&self) -> i16 {

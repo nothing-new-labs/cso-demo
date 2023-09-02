@@ -31,12 +31,7 @@ impl Rule for ScanImplementation {
     }
 
     fn transform(&self, input: &Plan, _context: &mut OptimizerContext) -> Vec<Plan> {
-        let logical_scan = input
-            .operator()
-            .logical_op()
-            .as_any()
-            .downcast_ref::<LogicalScan>()
-            .unwrap();
+        let logical_scan = input.operator().logical_op().downcast_ref::<LogicalScan>().unwrap();
         let physical_scan = PhysicalScan::new(
             logical_scan.table_desc().clone(),
             logical_scan.output_columns().to_vec(),
