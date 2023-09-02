@@ -8,6 +8,13 @@ pub struct OptimizePlanTask {
     plan: GroupPlanRef,
 }
 
+impl From<OptimizePlanTask> for Task {
+    #[inline]
+    fn from(task: OptimizePlanTask) -> Self {
+        Task::OptimizePlan(task)
+    }
+}
+
 impl OptimizePlanTask {
     pub const fn new(plan: GroupPlanRef) -> Self {
         OptimizePlanTask { plan }
@@ -37,17 +44,17 @@ impl OptimizePlanTask {
         let rules = self.get_rules(optimizer_ctx.rule_set());
         for rule in rules {
             let apply_rule_task = ApplyRuleTask::new(self.plan.clone(), rule);
-            task_runner.push_task(Task::ApplyRule(apply_rule_task));
+            task_runner.push_task(apply_rule_task);
         }
 
         let derive_stats_task = DeriveStatsTask::new(self.plan.clone());
-        task_runner.push_task(Task::DeriveStats(derive_stats_task));
+        task_runner.push_task(derive_stats_task);
 
         let group_plan = self.plan.borrow();
 
         for group in group_plan.inputs().iter().rev() {
             let task = ExploreGroupTask::new(group.clone());
-            task_runner.push_task(Task::ExploreGroup(task));
+            task_runner.push_task(task);
         }
     }
 }

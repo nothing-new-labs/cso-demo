@@ -11,6 +11,13 @@ pub struct ApplyRuleTask {
     rule: RuleRef,
 }
 
+impl From<ApplyRuleTask> for Task {
+    #[inline]
+    fn from(task: ApplyRuleTask) -> Self {
+        Task::ApplyRule(task)
+    }
+}
+
 impl ApplyRuleTask {
     pub const fn new(plan: GroupPlanRef, rule: RuleRef) -> Self {
         ApplyRuleTask { plan, rule }
@@ -38,11 +45,11 @@ impl ApplyRuleTask {
         for plan in new_plans {
             let group_plan = optimizer_ctx.memo_mut().copy_in_plan(Some(group.clone()), &plan);
             if group_plan.borrow().operator().is_logical() {
-                task_runner.push_task(Task::OptimizePlan(OptimizePlanTask::new(group_plan)));
+                task_runner.push_task(OptimizePlanTask::new(group_plan));
             } else {
                 let required_prop: PhysicalProperties = PhysicalProperties::new();
                 let new_task = EnforceAndCostTask::new(group_plan, Rc::new(required_prop.clone()));
-                task_runner.push_task(Task::EnforceAndCost(new_task));
+                task_runner.push_task(new_task);
             }
         }
     }

@@ -14,7 +14,7 @@ pub use optimize_plan::OptimizePlanTask;
 
 use crate::OptimizerContext;
 
-pub enum Task {
+pub(crate) enum Task {
     OptimizeGroup(OptimizeGroupTask),
     OptimizePlan(OptimizePlanTask),
     ApplyRule(ApplyRuleTask),
@@ -48,7 +48,7 @@ impl Task {
     }
 }
 
-pub struct TaskRunner {
+pub(crate) struct TaskRunner {
     tasks: Vec<Task>,
 }
 
@@ -57,8 +57,9 @@ impl TaskRunner {
         TaskRunner { tasks: Vec::new() }
     }
 
-    pub fn push_task(&mut self, task: Task) {
-        self.tasks.push(task);
+    #[inline]
+    pub fn push_task<T: Into<Task>>(&mut self, task: T) {
+        self.tasks.push(task.into());
     }
 
     pub fn run(&mut self, optimizer_ctx: &mut OptimizerContext) {

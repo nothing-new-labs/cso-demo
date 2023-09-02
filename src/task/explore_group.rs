@@ -6,6 +6,13 @@ pub struct ExploreGroupTask {
     group: GroupRef,
 }
 
+impl From<ExploreGroupTask> for Task {
+    #[inline]
+    fn from(task: ExploreGroupTask) -> Self {
+        Task::ExploreGroup(task)
+    }
+}
+
 impl ExploreGroupTask {
     pub const fn new(group: GroupRef) -> Self {
         ExploreGroupTask { group }
@@ -19,7 +26,7 @@ impl ExploreGroupTask {
 
         for plan in group.logical_plans() {
             let task = OptimizePlanTask::new(plan.clone());
-            task_runner.push_task(Task::OptimizePlan(task));
+            task_runner.push_task(task);
         }
 
         group.set_explored();

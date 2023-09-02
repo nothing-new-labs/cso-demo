@@ -10,6 +10,13 @@ pub struct EnforceAndCostTask {
     prev_index: usize,
 }
 
+impl From<EnforceAndCostTask> for Task {
+    #[inline]
+    fn from(task: EnforceAndCostTask) -> Self {
+        Task::EnforceAndCost(task)
+    }
+}
+
 impl Clone for EnforceAndCostTask {
     fn clone(&self) -> EnforceAndCostTask {
         todo!()
@@ -80,9 +87,9 @@ impl EnforceAndCostTask {
                     }
                     None => {
                         // 3. get output property of child groups and add enforcer to cost and plan pair
-                        task_runner.push_task(Task::EnforceAndCost(self.clone()));
+                        task_runner.push_task(self.clone());
                         let task = OptimizeGroupTask::new(child_group.clone(), Rc::new(required_prop.clone()));
-                        task_runner.push_task(Task::OptimizeGroup(task));
+                        task_runner.push_task(task);
                         return;
                     }
                 }

@@ -1,9 +1,16 @@
 use crate::memo::GroupPlanRef;
-use crate::task::TaskRunner;
+use crate::task::{Task, TaskRunner};
 use crate::OptimizerContext;
 
 pub struct DeriveStatsTask {
     plan: GroupPlanRef,
+}
+
+impl From<DeriveStatsTask> for Task {
+    #[inline]
+    fn from(task: DeriveStatsTask) -> Self {
+        Task::DeriveStats(task)
+    }
 }
 
 impl DeriveStatsTask {

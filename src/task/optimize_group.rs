@@ -10,6 +10,13 @@ pub struct OptimizeGroupTask {
     is_explored: bool,
 }
 
+impl From<OptimizeGroupTask> for Task {
+    #[inline]
+    fn from(task: OptimizeGroupTask) -> Self {
+        Task::OptimizeGroup(task)
+    }
+}
+
 impl OptimizeGroupTask {
     pub const fn new(group: GroupRef, required_prop: Rc<PhysicalProperties>) -> Self {
         OptimizeGroupTask {
@@ -29,14 +36,14 @@ impl OptimizeGroupTask {
         if !self.is_explored() {
             for plan in group.logical_plans().iter().rev() {
                 let task = OptimizePlanTask::new(plan.clone());
-                task_runner.push_task(Task::OptimizePlan(task));
+                task_runner.push_task(task);
             }
             self.is_explored = true;
         }
 
         for plan in group.physical_plans().iter().rev() {
             let task = EnforceAndCostTask::new(plan.clone(), self.required_prop.clone());
-            task_runner.push_task(Task::EnforceAndCost(task));
+            task_runner.push_task(task);
         }
     }
 }
