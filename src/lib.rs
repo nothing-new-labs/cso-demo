@@ -3,8 +3,7 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::new_without_default)]
 
-pub mod rule;
-
+mod any;
 pub mod cost;
 mod datum;
 pub mod expression;
@@ -12,6 +11,7 @@ mod memo;
 mod metadata;
 pub mod operator;
 pub mod property;
+pub mod rule;
 mod statistics;
 mod task;
 

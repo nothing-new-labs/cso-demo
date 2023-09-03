@@ -2,7 +2,6 @@ use crate::expression::ScalarExpression;
 use crate::metadata::MdAccessor;
 use crate::operator::LogicalOperator;
 use crate::statistics::Statistics;
-use std::any::Any;
 use std::rc::Rc;
 
 pub struct LogicalFilter {
@@ -23,10 +22,6 @@ impl LogicalFilter {
 impl LogicalOperator for LogicalFilter {
     fn name(&self) -> &str {
         "logical filter"
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self
     }
 
     fn operator_id(&self) -> i16 {

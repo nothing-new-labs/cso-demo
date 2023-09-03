@@ -6,17 +6,24 @@ pub mod physical_project;
 pub mod physical_scan;
 pub mod physical_topn;
 
+use crate::any::AsAny;
 use crate::metadata::MdAccessor;
 use crate::property::PhysicalProperties;
 use crate::statistics::Statistics;
 use std::any::Any;
 use std::rc::Rc;
 
-pub trait LogicalOperator: Any {
+pub trait LogicalOperator: AsAny {
     fn name(&self) -> &str;
-    fn as_any(&self) -> &dyn Any;
     fn operator_id(&self) -> i16;
     fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics;
+}
+
+impl dyn LogicalOperator {
+    #[inline]
+    pub fn downcast_ref<T: LogicalOperator>(&self) -> Option<&T> {
+        self.as_any().downcast_ref::<T>()
+    }
 }
 
 pub trait PhysicalOperator: Any {
