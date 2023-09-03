@@ -20,7 +20,7 @@ use crate::metadata::MdAccessor;
 use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::RuleSet;
-use crate::task::{OptimizeGroupTask, Task, TaskRunner};
+use crate::task::{OptimizeGroupTask, TaskRunner};
 use std::rc::Rc;
 
 pub struct LogicalPlan {
@@ -89,7 +89,7 @@ impl Optimizer {
         let mut task_runner = TaskRunner::new();
         let initial_task =
             OptimizeGroupTask::new(optimizer_ctx.memo().root_group().clone(), Rc::new(required_properties));
-        task_runner.push_task(Task::OptimizeGroup(initial_task));
+        task_runner.push_task(initial_task);
         task_runner.run(&mut optimizer_ctx);
         todo!()
     }
