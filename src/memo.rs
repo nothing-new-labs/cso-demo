@@ -3,7 +3,7 @@ use crate::operator::Operator;
 use crate::property::PhysicalProperties;
 use crate::rule::Rule;
 use crate::statistics::Statistics;
-use crate::{LogicalPlan, OptimizerContext, Plan};
+use crate::{LogicalPlan, OptimizerContext, PhysicalPlan, Plan};
 use bit_set::BitSet;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -200,6 +200,24 @@ impl Group {
         self.lowest_cost_plans
             .insert(required_prop.clone(), (curr_cost, curr_plan.clone()));
     }
+
+    fn best_plan(&self, required_prop: &PhysicalProperties) -> Option<&(Cost, GroupPlanRef)> {
+        self.lowest_cost_plans.get(required_prop)
+    }
+
+    pub fn extract_best_plan(&self, required_properties: &PhysicalProperties) -> PhysicalPlan {
+        let (_, plan) = self.best_plan(required_properties).unwrap();
+        let operator = plan.borrow().operator().physical_op().clone();
+
+        let mut inputs = Vec::new();
+        for group in plan.borrow().inputs() {
+            // todo: need inputs properties, not required properties
+            let child_plan = group.borrow().extract_best_plan(required_properties);
+            inputs.push(child_plan);
+        }
+
+        PhysicalPlan::new(operator, inputs)
+    }
 }
 
 pub struct Memo {
@@ -271,5 +289,9 @@ impl Memo {
 
     pub fn root_group(&self) -> &GroupRef {
         self.root_group.as_ref().expect("expect the root group is existing")
+    }
+
+    pub fn extract_best_plan(&self, required_properties: &PhysicalProperties) -> PhysicalPlan {
+        self.root_group().borrow().extract_best_plan(required_properties)
     }
 }
