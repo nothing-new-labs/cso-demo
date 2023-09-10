@@ -30,8 +30,22 @@ pub struct LogicalPlan {
 }
 
 pub struct PhysicalPlan {
-    _op: Rc<dyn PhysicalOperator>,
-    _inputs: Vec<PhysicalPlan>,
+    op: Rc<dyn PhysicalOperator>,
+    inputs: Vec<PhysicalPlan>,
+}
+
+impl PhysicalPlan {
+    pub const fn new(op: Rc<dyn PhysicalOperator>, inputs: Vec<PhysicalPlan>) -> Self {
+        PhysicalPlan { op, inputs }
+    }
+
+    pub fn operator(&self) -> &Rc<dyn PhysicalOperator> {
+        &self.op
+    }
+
+    pub fn inputs(&self) -> &[PhysicalPlan] {
+        &self.inputs
+    }
 }
 
 #[derive(Clone)]
@@ -81,17 +95,17 @@ impl Optimizer {
     pub fn optimize(
         &mut self,
         plan: LogicalPlan,
-        required_properties: PhysicalProperties,
+        required_properties: Rc<PhysicalProperties>,
         md_accessor: MdAccessor,
     ) -> PhysicalPlan {
         let mut optimizer_ctx = OptimizerContext::new(md_accessor);
         optimizer_ctx.memo_mut().init(plan);
         let mut task_runner = TaskRunner::new();
         let initial_task =
-            OptimizeGroupTask::new(optimizer_ctx.memo().root_group().clone(), Rc::new(required_properties));
+            OptimizeGroupTask::new(optimizer_ctx.memo().root_group().clone(), required_properties.clone());
         task_runner.push_task(initial_task);
         task_runner.run(&mut optimizer_ctx);
-        todo!()
+        optimizer_ctx.memo().extract_best_plan(&required_properties)
     }
 }
 
