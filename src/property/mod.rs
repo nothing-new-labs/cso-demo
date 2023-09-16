@@ -24,6 +24,12 @@ impl PhysicalProperties {
         }
     }
 
+    pub fn with_sort_property(sort_property: SortProperty) -> PhysicalProperties{
+        PhysicalProperties {
+            sort_property,
+        }
+    }
+
     pub fn satisfy(&self, required_prop: &PhysicalProperties) -> bool {
         // all output properties should be super set of required one
         self.sort_property.satisfy(&required_prop.sort_property)

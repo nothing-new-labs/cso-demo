@@ -2,6 +2,7 @@ use crate::expression::ColumnVar;
 use crate::operator::PhysicalOperator;
 use crate::property::PhysicalProperties;
 use std::rc::Rc;
+use crate::property::sort_property::SortProperty;
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct Ordering {
@@ -53,10 +54,10 @@ impl PhysicalOperator for PhysicalTopN {
     }
 
     fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
-        todo!()
+        PhysicalProperties::with_sort_property(SortProperty::with_order(self.order_spec.clone()))
     }
 
     fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>> {
-        todo!()
+        vec![vec![PhysicalProperties::with_sort_property(SortProperty::with_order(self.order_spec.clone()))]]
     }
 }
