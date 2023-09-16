@@ -2,6 +2,7 @@ pub mod sort_property;
 
 use crate::memo::{GroupPlan, GroupRef};
 use crate::property::sort_property::SortProperty;
+use std::rc::Rc;
 
 pub trait Property {}
 pub trait LogicalProperty: Property {}
@@ -24,10 +25,8 @@ impl PhysicalProperties {
         }
     }
 
-    pub fn with_sort_property(sort_property: SortProperty) -> PhysicalProperties{
-        PhysicalProperties {
-            sort_property,
-        }
+    pub fn with_sort_property(sort_property: SortProperty) -> Rc<PhysicalProperties> {
+        Rc::new(PhysicalProperties { sort_property })
     }
 
     pub fn satisfy(&self, required_prop: &PhysicalProperties) -> bool {

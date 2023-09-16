@@ -1,8 +1,8 @@
 use crate::expression::ColumnVar;
 use crate::operator::PhysicalOperator;
+use crate::property::sort_property::SortProperty;
 use crate::property::PhysicalProperties;
 use std::rc::Rc;
-use crate::property::sort_property::SortProperty;
 
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub struct Ordering {
@@ -53,11 +53,13 @@ impl PhysicalOperator for PhysicalTopN {
         7
     }
 
-    fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
+    fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
         PhysicalProperties::with_sort_property(SortProperty::with_order(self.order_spec.clone()))
     }
 
-    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>> {
-        vec![vec![PhysicalProperties::with_sort_property(SortProperty::with_order(self.order_spec.clone()))]]
+    fn required_properties(&self, _input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
+        vec![vec![PhysicalProperties::with_sort_property(SortProperty::with_order(
+            self.order_spec.clone(),
+        ))]]
     }
 }

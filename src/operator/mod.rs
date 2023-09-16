@@ -29,8 +29,8 @@ impl dyn LogicalOperator {
 pub trait PhysicalOperator: Any {
     fn name(&self) -> &str;
     fn operator_id(&self) -> i16;
-    fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> PhysicalProperties;
-    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>>;
+    fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties>;
+    fn required_properties(&self, input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>>;
 }
 
 #[derive(Clone)]

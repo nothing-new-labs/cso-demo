@@ -96,7 +96,7 @@ impl GroupPlan {
 }
 
 type LowestCostPlans = HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)>;
-type ChildRequiredPropertiesMap = HashMap<Rc<PhysicalProperties>, (Cost, Vec<PhysicalProperties>)>;
+type ChildRequiredPropertiesMap = HashMap<Rc<PhysicalProperties>, (Cost, Vec<Rc<PhysicalProperties>>)>;
 
 pub struct Group {
     group_id: u32,
@@ -207,7 +207,7 @@ impl Group {
     pub fn update_child_required_props(
         &mut self,
         required_prop: &Rc<PhysicalProperties>,
-        child_required_props: &[PhysicalProperties],
+        child_required_props: &[Rc<PhysicalProperties>],
         curr_cost: Cost,
     ) {
         if let Some((cost, _child_reqds)) = self.child_required_properties.get(required_prop) {
@@ -225,7 +225,7 @@ impl Group {
         self.lowest_cost_plans.get(required_prop)
     }
 
-    fn child_required_props(&self, required_prop: &PhysicalProperties) -> Option<&(Cost, Vec<PhysicalProperties>)> {
+    fn child_required_props(&self, required_prop: &PhysicalProperties) -> Option<&(Cost, Vec<Rc<PhysicalProperties>>)> {
         self.child_required_properties.get(required_prop)
     }
 
