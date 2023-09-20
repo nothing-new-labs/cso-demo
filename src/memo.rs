@@ -1,8 +1,8 @@
 use crate::cost::Cost;
+use crate::metadata::statistics::Stats;
 use crate::operator::Operator;
 use crate::property::PhysicalProperties;
 use crate::rule::Rule;
-use crate::statistics::Statistics;
 use crate::{LogicalPlan, OptimizerContext, PhysicalPlan, Plan};
 use bit_set::BitSet;
 use std::cell::RefCell;
@@ -70,7 +70,7 @@ impl GroupPlan {
         self.stats_derived = true;
     }
 
-    pub fn derive_statistics(&self, optimizer_ctx: &OptimizerContext) -> Statistics {
+    pub fn derive_statistics(&self, optimizer_ctx: &OptimizerContext) -> Rc<dyn Stats> {
         let mut input_stats = Vec::with_capacity(self.inputs.len());
 
         for input in &self.inputs {
@@ -89,9 +89,8 @@ impl GroupPlan {
         self.require_to_output_map.get(reqd_prop).expect("output not null")
     }
 
-    pub fn compute_cost(&self) -> Cost {
-        // todo: add compute cost to operator
-        Cost::new()
+    pub fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {
+        self.op.physical_op().compute_cost(stats)
     }
 }
 
@@ -103,7 +102,7 @@ pub struct Group {
     logical_plans: Vec<GroupPlanRef>,
     physical_plans: Vec<GroupPlanRef>,
     is_explored: bool,
-    statistics: Option<Rc<Statistics>>,
+    statistics: Option<Rc<dyn Stats>>,
     lowest_cost_plans: LowestCostPlans,
     child_required_properties: ChildRequiredPropertiesMap,
 }
@@ -160,14 +159,14 @@ impl Group {
         self.is_explored = true;
     }
 
-    pub fn set_statistics(&mut self, stats: Statistics) {
-        self.statistics = Some(Rc::new(stats));
+    pub fn set_statistics(&mut self, stats: Rc<dyn Stats>) {
+        self.statistics = Some(stats);
     }
 
-    pub fn update_statistics(&mut self, stats: Statistics) {
+    pub fn update_statistics(&mut self, stats: Rc<dyn Stats>) {
         match self.statistics {
             Some(ref old_stats) => {
-                if Statistics::should_update(&stats, old_stats) {
+                if old_stats.should_update(&stats) {
                     self.set_statistics(stats)
                 }
             }
@@ -175,7 +174,7 @@ impl Group {
         }
     }
 
-    pub fn statistics(&self) -> &Option<Rc<Statistics>> {
+    pub fn statistics(&self) -> &Option<Rc<dyn Stats>> {
         &self.statistics
     }
 

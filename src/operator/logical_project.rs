@@ -1,7 +1,7 @@
 use crate::expression::ScalarExpression;
-use crate::metadata::MdAccessor;
+use crate::metadata::md_accessor::MdAccessor;
+use crate::metadata::statistics::Stats;
 use crate::operator::LogicalOperator;
-use crate::statistics::Statistics;
 use std::rc::Rc;
 
 pub struct LogicalProject {
@@ -27,8 +27,7 @@ impl LogicalOperator for LogicalProject {
         3
     }
 
-    fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics {
-        // TODO: projection stats
-        (*input_stats[0]).clone()
+    fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {
+        input_stats[0].clone()
     }
 }
