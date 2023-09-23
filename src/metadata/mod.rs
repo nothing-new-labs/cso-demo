@@ -7,12 +7,12 @@ use dyn_clonable::clonable;
 use serde::{Deserialize, Serialize};
 use serde_json_any_key::any_key_map;
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
 
 #[typetag::serde(tag = "type")]
 #[clonable]
-pub trait Metadata: AsAny + Clone {}
+pub trait Metadata: AsAny + Clone + Debug {}
 
 impl dyn Metadata {
     #[inline]
@@ -23,7 +23,7 @@ impl dyn Metadata {
 
 #[typetag::serde(tag = "type")]
 #[clonable]
-pub trait MdId: AsAny + Clone + Display {
+pub trait MdId: AsAny + Clone + Display + Debug {
     fn equal(&self, other: &dyn MdId) -> bool;
     fn hash(&self);
 }

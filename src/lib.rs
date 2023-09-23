@@ -27,7 +27,26 @@ use std::rc::Rc;
 pub struct LogicalPlan {
     op: Rc<dyn LogicalOperator>,
     inputs: Vec<LogicalPlan>,
-    _required_properties: Vec<PhysicalProperties>,
+    required_properties: Vec<PhysicalProperties>,
+}
+
+impl LogicalPlan {
+    #[inline]
+    pub const fn new(
+        op: Rc<dyn LogicalOperator>,
+        inputs: Vec<LogicalPlan>,
+        required_properties: Vec<PhysicalProperties>,
+    ) -> Self {
+        Self {
+            op,
+            inputs,
+            required_properties,
+        }
+    }
+
+    pub fn required_properties(&self) -> &[PhysicalProperties] {
+        &self.required_properties
+    }
 }
 
 pub struct PhysicalPlan {
@@ -84,6 +103,12 @@ impl Plan {
 
 pub struct Options {}
 
+impl Default for Options {
+    fn default() -> Self {
+        Options {}
+    }
+}
+
 pub struct Optimizer {
     _options: Options,
 }
@@ -101,6 +126,7 @@ impl Optimizer {
     ) -> PhysicalPlan {
         let mut optimizer_ctx = OptimizerContext::new(md_accessor);
         optimizer_ctx.memo_mut().init(plan);
+        // dbg!(optimizer_ctx.memo());
         let mut task_runner = TaskRunner::new();
         let initial_task =
             OptimizeGroupTask::new(optimizer_ctx.memo().root_group().clone(), required_properties.clone());

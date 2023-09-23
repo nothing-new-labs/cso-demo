@@ -3,14 +3,15 @@ use crate::datum::Datum;
 use crate::metadata::{MdId, Metadata};
 use serde::{Deserialize, Serialize};
 use std::any::Any;
+use std::fmt::Debug;
 use std::rc::Rc;
 
-pub trait Stats {
+pub trait Stats: Debug {
     fn as_any(&self) -> &dyn Any;
     fn should_update(&self, new_stats: &Rc<dyn Stats>) -> bool;
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Bucket {
     lower: Datum,     // Lower bound value of the bucket.
     upper: Datum,     // Upper bound value of the bucket.
@@ -51,7 +52,7 @@ impl Bucket {
 }
 
 /// A histogram is a representation of the distribution of a column.
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Histogram {
     buckets: Vec<Bucket>,
 }
@@ -71,7 +72,7 @@ impl Histogram {
 pub type ColumnIndex = usize;
 
 /// Statistics information of a column
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ColumnStats {
     col_idx: ColumnIndex,
     name: String,
@@ -128,7 +129,7 @@ impl ColumnStats {
 #[typetag::serde]
 impl Metadata for ColumnStats {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Statistics {
     output_row_count: f64,
 
@@ -160,7 +161,7 @@ impl Stats for Statistics {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct RelationStats {
     name: String,
     rows: f64,
@@ -199,7 +200,7 @@ impl RelationStats {
 #[typetag::serde]
 impl Metadata for RelationStats {}
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ColumnMetadata {
     name: String,
     attno: u64,
@@ -240,21 +241,21 @@ impl ColumnMetadata {
     }
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum StorageType {
     Heap,
     External,
     Virtual,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, Debug)]
 pub enum DistributionPolicyType {
     Hash,
     Random,
     Replicated,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct RelationMetadata {
     name: String,
     is_temporary: bool,

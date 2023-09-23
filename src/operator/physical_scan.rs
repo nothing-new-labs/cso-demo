@@ -4,6 +4,7 @@ use crate::operator::PhysicalOperator;
 use crate::property::PhysicalProperties;
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct PhysicalScan {
     _table_desc: TableDesc,
     _output_columns: Vec<ColumnVar>,

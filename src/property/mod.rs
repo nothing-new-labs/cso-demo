@@ -13,7 +13,7 @@ pub trait PhysicalProperty: Property {
 #[derive(Clone)]
 pub struct LogicalProperties {}
 
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub struct PhysicalProperties {
     sort_property: SortProperty,
 }

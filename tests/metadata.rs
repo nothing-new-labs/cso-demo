@@ -4,6 +4,8 @@ use cso_demo::metadata::statistics::{
     StorageType,
 };
 use cso_demo::metadata::{MdCache, MdId, Metadata};
+use std::fs::File;
+use std::io::Write;
 
 #[test]
 fn test_serialize_md_cache() {

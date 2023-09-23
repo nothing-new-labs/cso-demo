@@ -9,6 +9,13 @@ pub struct MdAccessor {
 }
 
 impl MdAccessor {
+    pub fn new(md_provider: Rc<dyn MdProvider>) -> Self {
+        Self {
+            md_cache: RefCell::new(MdCache::new()),
+            md_provider,
+        }
+    }
+
     pub fn retrieve_metadata(&self, md_id: &Box<dyn MdId>) -> Box<dyn Metadata> {
         let mut md_cache = self.md_cache.borrow_mut();
         match md_cache.get(md_id) {

@@ -11,6 +11,7 @@ use std::rc::{Rc, Weak};
 
 type RequireToOutputMap = HashMap<PhysicalProperties, Rc<PhysicalProperties>>;
 
+#[derive(Debug)]
 pub struct GroupPlan {
     group: GroupWeakRef,
     op: Operator,
@@ -97,6 +98,7 @@ impl GroupPlan {
 type LowestCostPlans = HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)>;
 type ChildRequiredPropertiesMap = HashMap<Rc<PhysicalProperties>, (Cost, Vec<Rc<PhysicalProperties>>)>;
 
+#[derive(Debug)]
 pub struct Group {
     group_id: u32,
     logical_plans: Vec<GroupPlanRef>,
@@ -243,6 +245,7 @@ impl Group {
     }
 }
 
+#[derive(Debug)]
 pub struct Memo {
     groups: Vec<GroupRef>,
     root_group: Option<GroupRef>,

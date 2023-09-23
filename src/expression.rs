@@ -1,4 +1,6 @@
-pub trait ScalarExpression {
+use std::fmt::Debug;
+
+pub trait ScalarExpression: Debug {
     fn is_boolean_expression(&self) -> bool {
         false
     }
@@ -6,7 +8,7 @@ pub trait ScalarExpression {
 
 pub trait AggregateExpression {}
 
-#[derive(Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
 #[repr(transparent)]
 pub struct ColumnVar {
     id: i32,
@@ -22,4 +24,9 @@ impl ColumnVar {
     }
 }
 
-impl ScalarExpression for ColumnVar {}
+impl ScalarExpression for ColumnVar {
+    fn is_boolean_expression(&self) -> bool {
+        // todo
+        true
+    }
+}

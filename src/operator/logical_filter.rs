@@ -4,6 +4,7 @@ use crate::metadata::statistics::Stats;
 use crate::operator::LogicalOperator;
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct LogicalFilter {
     predicate: Rc<dyn ScalarExpression>,
 }

@@ -5,9 +5,15 @@ use crate::metadata::MdId;
 use crate::operator::LogicalOperator;
 use std::rc::Rc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TableDesc {
     md_id: Box<dyn MdId>,
+}
+
+impl TableDesc {
+    pub const fn new(md_id: Box<dyn MdId>) -> Self {
+        Self { md_id }
+    }
 }
 
 impl TableDesc {
@@ -16,6 +22,7 @@ impl TableDesc {
     }
 }
 
+#[derive(Debug)]
 pub struct LogicalScan {
     table_desc: TableDesc,
     output_columns: Vec<ColumnVar>,
