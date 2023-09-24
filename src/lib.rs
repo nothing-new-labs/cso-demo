@@ -78,12 +78,12 @@ pub struct Plan {
 }
 
 impl Plan {
-    pub fn new(op: Operator, inputs: Vec<Plan>) -> Self {
+    pub fn new(op: Operator, inputs: Vec<Plan>, group_plan: Option<GroupPlanRef>) -> Self {
         Plan {
             op,
             inputs,
             _property: LogicalProperties {},
-            group_plan: None,
+            group_plan,
             _required_properties: vec![],
         }
     }

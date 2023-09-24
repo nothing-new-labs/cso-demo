@@ -7,7 +7,6 @@ use std::rc::Rc;
 pub struct OptimizeGroupTask {
     group: GroupRef,
     required_prop: Rc<PhysicalProperties>,
-    is_explored: bool,
 }
 
 impl From<OptimizeGroupTask> for Task {
@@ -19,26 +18,18 @@ impl From<OptimizeGroupTask> for Task {
 
 impl OptimizeGroupTask {
     pub const fn new(group: GroupRef, required_prop: Rc<PhysicalProperties>) -> Self {
-        OptimizeGroupTask {
-            group,
-            required_prop,
-            is_explored: false,
-        }
+        OptimizeGroupTask { group, required_prop }
     }
 
-    fn is_explored(&self) -> bool {
-        self.is_explored
-    }
+    pub(super) fn execute(self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
+        let mut group = self.group.borrow_mut();
 
-    pub(super) fn execute(mut self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
-        let group = self.group.borrow();
-
-        if !self.is_explored() {
+        if !group.is_explored() {
             for plan in group.logical_plans().iter().rev() {
                 let task = OptimizePlanTask::new(plan.clone());
                 task_runner.push_task(task);
             }
-            self.is_explored = true;
+            group.set_explored();
         }
 
         for plan in group.physical_plans().iter().rev() {

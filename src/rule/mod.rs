@@ -134,13 +134,13 @@ impl RuleSet {
 
 pub struct Binding<'a> {
     pattern: &'a Pattern,
-    plan: &'a GroupPlan,
+    plan: &'a GroupPlanRef,
     group_trace_id: usize,
     group_plan_index: Vec<u32>,
 }
 
 impl<'a> Binding<'a> {
-    pub fn new(pattern: &'a Pattern, plan: &'a GroupPlan) -> Self {
+    pub fn new(pattern: &'a Pattern, plan: &'a GroupPlanRef) -> Self {
         Binding {
             pattern,
             plan,
@@ -168,8 +168,9 @@ impl<'a> Binding<'a> {
         }
     }
 
-    fn matches(&mut self, pattern: &Pattern, group_plan: &GroupPlan) -> Option<Plan> {
-        if !pattern.match_without_child(group_plan) {
+    fn matches(&mut self, pattern: &Pattern, group_plan: &GroupPlanRef) -> Option<Plan> {
+        let group_plan_borrow = group_plan.borrow();
+        if !pattern.match_without_child(group_plan_borrow.deref()) {
             return None;
         }
 
@@ -177,26 +178,30 @@ impl<'a> Binding<'a> {
         let mut pattern_index = 0;
         let mut group_plan_index = 0;
 
-        while pattern_index < pattern.children().len() && group_plan_index < group_plan.inputs().len() {
+        while pattern_index < pattern.children().len() && group_plan_index < group_plan_borrow.inputs().len() {
             self.group_trace_id += 1;
             self.group_plan_index.resize(self.group_trace_id + 1, 0);
 
-            let group = &*group_plan.inputs()[group_plan_index].borrow();
+            let group = &*group_plan_borrow.inputs()[group_plan_index].borrow();
             let child_pattern = pattern.child(pattern_index);
 
             let current_plan = self.extract_group_plan(child_pattern, group)?;
-            let child_plan = self.matches(child_pattern, current_plan.borrow().deref())?;
+            let child_plan = self.matches(child_pattern, &current_plan)?;
             inputs.push(child_plan);
 
             if !(child_pattern.is_multi_leaf()
-                && (group_plan.inputs().len() - group_plan_index > pattern.children.len() - pattern_index))
+                && (group_plan_borrow.inputs().len() - group_plan_index > pattern.children.len() - pattern_index))
             {
                 pattern_index += 1;
             }
             group_plan_index += 1;
         }
 
-        Some(Plan::new(group_plan.operator().clone(), inputs))
+        Some(Plan::new(
+            group_plan_borrow.operator().clone(),
+            inputs,
+            Some(group_plan.clone()),
+        ))
     }
 
     fn next(&mut self) -> Option<Plan> {
@@ -204,8 +209,7 @@ impl<'a> Binding<'a> {
             return None;
         }
 
-        let plan = None;
-
+        // todo
         loop {
             self.group_trace_id = 0;
             if let Some(last) = self.group_plan_index.last_mut() {
@@ -214,11 +218,9 @@ impl<'a> Binding<'a> {
 
             let plan = self.matches(self.pattern, self.plan);
             if plan.is_some() || self.group_plan_index.len() == 1 {
-                break;
+                return plan;
             }
         }
-
-        plan
     }
 }
 

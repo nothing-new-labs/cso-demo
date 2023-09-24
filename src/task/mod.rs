@@ -62,8 +62,14 @@ impl TaskRunner {
         self.tasks.push(task.into());
     }
 
+    #[inline]
+    pub fn pop_task(&mut self) -> Option<Task> {
+        let task = self.tasks.pop();
+        task
+    }
+
     pub fn run(&mut self, optimizer_ctx: &mut OptimizerContext) {
-        while let Some(task) = self.tasks.pop() {
+        while let Some(task) = self.pop_task() {
             task.execute(self, optimizer_ctx);
         }
     }

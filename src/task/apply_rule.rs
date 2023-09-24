@@ -3,7 +3,6 @@ use crate::property::PhysicalProperties;
 use crate::rule::{Binding, RuleRef};
 use crate::task::{EnforceAndCostTask, OptimizePlanTask, Task, TaskRunner};
 use crate::OptimizerContext;
-use std::ops::Deref;
 use std::rc::Rc;
 
 pub struct ApplyRuleTask {
@@ -30,7 +29,7 @@ impl ApplyRuleTask {
         let plan = self.plan.borrow();
         let group = plan.group();
         let pattern = self.rule.pattern();
-        let binding = Binding::new(pattern, plan.deref());
+        let binding = Binding::new(pattern, &self.plan);
         let mut new_plans = Vec::new();
 
         for plan in binding {

@@ -20,7 +20,11 @@ impl From<EnforceAndCostTask> for Task {
 
 impl Clone for EnforceAndCostTask {
     fn clone(&self) -> EnforceAndCostTask {
-        todo!()
+        Self {
+            plan: self.plan.clone(),
+            required_prop: self.required_prop.clone(),
+            prev_index: self.prev_index + 1,
+        }
     }
 }
 

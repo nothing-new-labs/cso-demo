@@ -36,6 +36,7 @@ impl Rule for FilterImplementation {
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_filter)),
             input.inputs().to_vec(),
+            input.group_plan.clone(),
         )]
     }
 }
