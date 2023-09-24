@@ -16,37 +16,23 @@ pub struct OrderSpec {
     pub order_desc: Vec<Ordering>,
 }
 
-pub struct PhysicalTopN {
+pub struct PhysicalSort {
     order_spec: OrderSpec,
-    limit: u64,
-    offset: u64,
 }
 
-impl PhysicalTopN {
-    pub fn new(order_spec: OrderSpec, limit: u64, offset: u64) -> Self {
-        PhysicalTopN {
-            order_spec,
-            limit,
-            offset,
-        }
+impl PhysicalSort {
+    pub fn new(order_spec: OrderSpec) -> Self {
+        PhysicalSort { order_spec }
     }
 
     pub fn order_spec(&self) -> &OrderSpec {
         &self.order_spec
     }
-
-    pub fn limit(&self) -> u64 {
-        self.limit
-    }
-
-    pub fn offset(&self) -> u64 {
-        self.offset
-    }
 }
 
-impl PhysicalOperator for PhysicalTopN {
+impl PhysicalOperator for PhysicalSort {
     fn name(&self) -> &str {
-        "physical topN"
+        "physical sort"
     }
 
     fn operator_id(&self) -> i16 {

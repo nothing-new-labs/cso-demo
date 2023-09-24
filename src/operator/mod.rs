@@ -4,7 +4,7 @@ pub mod logical_scan;
 pub mod physical_filter;
 pub mod physical_project;
 pub mod physical_scan;
-pub mod physical_topn;
+pub mod physical_sort;
 
 use crate::any::AsAny;
 use crate::metadata::MdAccessor;
