@@ -25,6 +25,10 @@ impl SortProperty {
         }
     }
 
+    pub fn with_order(order_spec: OrderSpec) -> SortProperty {
+        SortProperty { order_spec }
+    }
+
     pub fn satisfy(&self, required: &SortProperty) -> bool {
         if self.order_spec.order_desc.len() < required.order_spec.order_desc.len() {
             return false;

@@ -27,11 +27,11 @@ impl PhysicalOperator for PhysicalFilter {
         5
     }
 
-    fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
-        todo!()
+    fn derive_output_properties(&self, child_output_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
+        child_output_props[0].clone()
     }
 
-    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>> {
-        todo!()
+    fn required_properties(&self, input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
+        vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
     }
 }

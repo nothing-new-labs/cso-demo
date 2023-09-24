@@ -96,6 +96,7 @@ impl GroupPlan {
 }
 
 type LowestCostPlans = HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)>;
+type ChildRequiredPropertiesMap = HashMap<Rc<PhysicalProperties>, (Cost, Vec<Rc<PhysicalProperties>>)>;
 
 pub struct Group {
     group_id: u32,
@@ -104,6 +105,7 @@ pub struct Group {
     is_explored: bool,
     statistics: Option<Rc<Statistics>>,
     lowest_cost_plans: LowestCostPlans,
+    child_required_properties: ChildRequiredPropertiesMap,
 }
 
 pub type GroupRef = Rc<RefCell<Group>>;
@@ -118,6 +120,7 @@ impl Group {
             is_explored: false,
             statistics: None,
             lowest_cost_plans: HashMap::new(),
+            child_required_properties: HashMap::new(),
         }
     }
 
@@ -201,8 +204,29 @@ impl Group {
             .insert(required_prop.clone(), (curr_cost, curr_plan.clone()));
     }
 
+    pub fn update_child_required_props(
+        &mut self,
+        required_prop: &Rc<PhysicalProperties>,
+        child_required_props: &[Rc<PhysicalProperties>],
+        curr_cost: Cost,
+    ) {
+        if let Some((cost, _child_reqds)) = self.child_required_properties.get(required_prop) {
+            // if current cost is larger, do nothing
+            if curr_cost.value() >= cost.value() {
+                return;
+            }
+        }
+        // update lowest_cost_plans
+        self.child_required_properties
+            .insert(required_prop.clone(), (curr_cost, child_required_props.to_owned()));
+    }
+
     fn best_plan(&self, required_prop: &PhysicalProperties) -> Option<&(Cost, GroupPlanRef)> {
         self.lowest_cost_plans.get(required_prop)
+    }
+
+    fn child_required_props(&self, required_prop: &PhysicalProperties) -> Option<&(Cost, Vec<Rc<PhysicalProperties>>)> {
+        self.child_required_properties.get(required_prop)
     }
 
     pub fn extract_best_plan(&self, required_properties: &PhysicalProperties) -> PhysicalPlan {
@@ -210,9 +234,9 @@ impl Group {
         let operator = plan.borrow().operator().physical_op().clone();
 
         let mut inputs = Vec::new();
-        for group in plan.borrow().inputs() {
-            // todo: need inputs properties, not required properties
-            let child_plan = group.borrow().extract_best_plan(required_properties);
+        let (_, child_reqd_props) = self.child_required_props(required_properties).unwrap();
+        for (group, child_reqd_prop) in plan.borrow().inputs().iter().zip(child_reqd_props) {
+            let child_plan = group.borrow().extract_best_plan(child_reqd_prop);
             inputs.push(child_plan);
         }
 

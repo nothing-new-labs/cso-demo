@@ -27,11 +27,11 @@ impl PhysicalOperator for PhysicalScan {
         4
     }
 
-    fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> PhysicalProperties {
-        todo!()
+    fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
+        Rc::new(PhysicalProperties::new())
     }
 
-    fn get_required_properties(&self) -> Vec<Vec<PhysicalProperties>> {
-        todo!()
+    fn required_properties(&self, _input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
+        vec![vec![]]
     }
 }
