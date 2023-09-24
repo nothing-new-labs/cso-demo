@@ -1,5 +1,5 @@
 use crate::memo::{GroupPlan, GroupRef};
-use crate::operator::physical_topn::{OrderSpec, PhysicalTopN};
+use crate::operator::physical_sort::{OrderSpec, PhysicalSort};
 use crate::operator::Operator;
 use crate::property::{PhysicalProperty, Property};
 use std::rc::Rc;
@@ -13,8 +13,8 @@ impl Property for SortProperty {}
 
 impl PhysicalProperty for SortProperty {
     fn make_enforcer(&self, group: GroupRef) -> GroupPlan {
-        let physical_topn = PhysicalTopN::new(self.order_spec.clone(), 1, 0);
-        GroupPlan::new(Operator::Physical(Rc::new(physical_topn)), vec![group])
+        let physical_sort = PhysicalSort::new(self.order_spec.clone());
+        GroupPlan::new(Operator::Physical(Rc::new(physical_sort)), vec![group])
     }
 }
 
