@@ -1,5 +1,5 @@
 #[repr(transparent)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Cost(f64);
 
 impl Cost {

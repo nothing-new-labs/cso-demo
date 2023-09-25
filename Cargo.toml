@@ -12,3 +12,5 @@ publish = false
 
 [dependencies]
 bit-set = "0.5.3"
+dyn-clonable = "0.9.0"
+

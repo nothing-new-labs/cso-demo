@@ -57,11 +57,11 @@ impl EnforceAndCostTask {
             .operator()
             .physical_op()
             .derive_output_properties(child_output_props);
-        let curr_cost = curr_plan.compute_cost();
         let curr_group = curr_plan.group();
+        let curr_cost = curr_plan.compute_cost(curr_group.borrow().statistics().as_deref());
         if !output_prop.satisfy(&self.required_prop) {
             let enforcer_plan = self.add_enforcer_to_group(&self.required_prop, memo);
-            let enforcer_cost = curr_plan.compute_cost();
+            let enforcer_cost = curr_plan.compute_cost(curr_group.borrow().statistics().as_deref());
             curr_group
                 .borrow_mut()
                 .update_cost_plan(&self.required_prop, &enforcer_plan, enforcer_cost);

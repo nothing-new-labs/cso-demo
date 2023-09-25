@@ -4,18 +4,19 @@ use crate::property::sort_property::SortProperty;
 use crate::property::PhysicalProperties;
 use std::rc::Rc;
 
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub struct Ordering {
     pub key: ColumnVar,
     pub ascending: bool,
     pub nulls_first: bool,
 }
 
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub struct OrderSpec {
     pub order_desc: Vec<Ordering>,
 }
 
+#[derive(Debug)]
 pub struct PhysicalSort {
     order_spec: OrderSpec,
 }

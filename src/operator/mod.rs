@@ -7,16 +7,18 @@ pub mod physical_scan;
 pub mod physical_sort;
 
 use crate::any::AsAny;
-use crate::metadata::MdAccessor;
+use crate::cost::Cost;
+use crate::metadata::md_accessor::MdAccessor;
+use crate::metadata::statistics::Stats;
 use crate::property::PhysicalProperties;
-use crate::statistics::Statistics;
 use std::any::Any;
+use std::fmt::Debug;
 use std::rc::Rc;
 
-pub trait LogicalOperator: AsAny {
+pub trait LogicalOperator: AsAny + Debug {
     fn name(&self) -> &str;
     fn operator_id(&self) -> i16;
-    fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics;
+    fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats>;
 }
 
 impl dyn LogicalOperator {
@@ -26,14 +28,17 @@ impl dyn LogicalOperator {
     }
 }
 
-pub trait PhysicalOperator: Any {
+pub trait PhysicalOperator: Any + Debug {
     fn name(&self) -> &str;
     fn operator_id(&self) -> i16;
     fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties>;
     fn required_properties(&self, input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>>;
+    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
+        Cost::new()
+    }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Operator {
     Logical(Rc<dyn LogicalOperator>),
     Physical(Rc<dyn PhysicalOperator>),

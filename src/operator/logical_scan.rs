@@ -1,20 +1,28 @@
 use crate::expression::ColumnVar;
-use crate::metadata::{MdAccessor, MdId};
+use crate::metadata::md_accessor::MdAccessor;
+use crate::metadata::statistics::{RelationMetadata, RelationStats, Statistics, Stats};
+use crate::metadata::MdId;
 use crate::operator::LogicalOperator;
-use crate::statistics::Statistics;
 use std::rc::Rc;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct TableDesc {
-    md_id: MdId,
+    md_id: Box<dyn MdId>,
 }
 
 impl TableDesc {
-    fn md_id(&self) -> &MdId {
+    pub const fn new(md_id: Box<dyn MdId>) -> Self {
+        Self { md_id }
+    }
+}
+
+impl TableDesc {
+    fn md_id(&self) -> &Box<dyn MdId> {
         &self.md_id
     }
 }
 
+#[derive(Debug)]
 pub struct LogicalScan {
     table_desc: TableDesc,
     output_columns: Vec<ColumnVar>,
@@ -35,6 +43,33 @@ impl LogicalScan {
     pub fn output_columns(&self) -> &[ColumnVar] {
         &self.output_columns
     }
+
+    fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {
+        debug_assert!(input_stats.is_empty());
+
+        let relation_md_id = self.table_desc.md_id();
+        let rel_md = md_accessor.retrieve_metadata(relation_md_id);
+        let rel_md = rel_md
+            .downcast_ref::<RelationMetadata>()
+            .expect("RelationMetadata expected");
+
+        let rel_stats_md_id = rel_md.rel_stats_mdid();
+        let rel_stats = md_accessor.retrieve_metadata(rel_stats_md_id);
+        let rel_stats = rel_stats
+            .downcast_ref::<RelationStats>()
+            .expect("RelationStats expected");
+
+        let output_row_count = rel_stats.rows();
+
+        let mut column_stats = Vec::new();
+        for col_stats_md_id in rel_stats.col_stat_mdids() {
+            let col_stats = md_accessor.retrieve_metadata(col_stats_md_id);
+            column_stats.push(col_stats);
+        }
+
+        let stats = Statistics::new(output_row_count, column_stats);
+        Rc::new(stats)
+    }
 }
 
 impl LogicalOperator for LogicalScan {
@@ -46,8 +81,7 @@ impl LogicalOperator for LogicalScan {
         1
     }
 
-    fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<Statistics>]) -> Statistics {
-        debug_assert!(input_stats.is_empty());
-        md_accessor.derive_stats(self.table_desc.md_id())
+    fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {
+        self.derive_statistics(md_accessor, input_stats)
     }
 }
