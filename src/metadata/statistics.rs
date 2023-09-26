@@ -1,6 +1,7 @@
 use crate::any::AsAny;
 use crate::datum::Datum;
 use crate::metadata::{MdId, Metadata};
+use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::rc::Rc;
 
@@ -8,7 +9,7 @@ pub trait Stats: Debug + AsAny {
     fn should_update(&self, new_stats: &Rc<dyn Stats>) -> bool;
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Bucket {
     lower: Datum,     // Lower bound value of the bucket.
     upper: Datum,     // Upper bound value of the bucket.
@@ -49,7 +50,7 @@ impl Bucket {
 }
 
 /// A histogram is a representation of the distribution of a column.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Histogram {
     buckets: Vec<Bucket>,
 }
@@ -69,7 +70,7 @@ impl Histogram {
 pub type ColumnIndex = usize;
 
 /// Statistics information of a column
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ColumnStats {
     col_idx: ColumnIndex,
     name: String,
@@ -123,6 +124,7 @@ impl ColumnStats {
     }
 }
 
+#[typetag::serde]
 impl Metadata for ColumnStats {}
 
 #[derive(Clone, Debug)]
@@ -153,7 +155,7 @@ impl Stats for Statistics {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RelationStats {
     name: String,
     rows: u64,
@@ -188,9 +190,10 @@ impl RelationStats {
     }
 }
 
+#[typetag::serde]
 impl Metadata for RelationStats {}
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ColumnMetadata {
     name: String,
     attno: u64,
@@ -231,7 +234,7 @@ impl ColumnMetadata {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RelationMetadata {
     name: String,
     column_metadata: Vec<ColumnMetadata>,
@@ -261,4 +264,5 @@ impl RelationMetadata {
     }
 }
 
+#[typetag::serde]
 impl Metadata for RelationMetadata {}
