@@ -4,7 +4,7 @@ use crate::operator::Operator;
 use crate::property::{PhysicalProperty, Property};
 use std::rc::Rc;
 
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub struct SortProperty {
     order_spec: OrderSpec,
 }

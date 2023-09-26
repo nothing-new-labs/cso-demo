@@ -2,21 +2,22 @@
 
 #![forbid(unsafe_code)]
 #![allow(clippy::new_without_default)]
+#![allow(clippy::borrowed_box)]
 
-mod any;
 pub mod cost;
-mod datum;
+pub mod datum;
 pub mod expression;
-mod memo;
-mod metadata;
+pub mod metadata;
 pub mod operator;
 pub mod property;
 pub mod rule;
-mod statistics;
+
+mod any;
+mod memo;
 mod task;
 
 use crate::memo::{GroupPlanRef, Memo};
-use crate::metadata::MdAccessor;
+use crate::metadata::md_accessor::MdAccessor;
 use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::RuleSet;
@@ -81,6 +82,7 @@ impl Plan {
     }
 }
 
+#[derive(Default)]
 pub struct Options {}
 
 pub struct Optimizer {

@@ -3,6 +3,7 @@ use crate::operator::PhysicalOperator;
 use crate::property::PhysicalProperties;
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct PhysicalFilter {
     predicate: Rc<dyn ScalarExpression>,
 }
