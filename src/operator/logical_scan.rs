@@ -48,13 +48,15 @@ impl LogicalScan {
         debug_assert!(input_stats.is_empty());
 
         let relation_md_id = self.table_desc.md_id();
-        let rel_md = md_accessor.retrieve_metadata(relation_md_id);
+        let rel_md = md_accessor.retrieve_metadata(relation_md_id).expect("Missing metadata");
         let rel_md = rel_md
             .downcast_ref::<RelationMetadata>()
             .expect("RelationMetadata expected");
 
         let rel_stats_md_id = rel_md.rel_stats_mdid();
-        let rel_stats = md_accessor.retrieve_metadata(rel_stats_md_id);
+        let rel_stats = md_accessor
+            .retrieve_metadata(rel_stats_md_id)
+            .expect("Missing metadata");
         let rel_stats = rel_stats
             .downcast_ref::<RelationStats>()
             .expect("RelationStats expected");
@@ -63,7 +65,9 @@ impl LogicalScan {
 
         let mut column_stats = Vec::new();
         for col_stats_md_id in rel_stats.col_stat_mdids() {
-            let col_stats = md_accessor.retrieve_metadata(col_stats_md_id);
+            let col_stats = md_accessor
+                .retrieve_metadata(col_stats_md_id)
+                .expect("Missing metadata");
             column_stats.push(col_stats);
         }
 

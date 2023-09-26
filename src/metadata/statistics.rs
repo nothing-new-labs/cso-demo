@@ -1,12 +1,10 @@
 use crate::any::AsAny;
 use crate::datum::Datum;
 use crate::metadata::{MdId, Metadata};
-use std::any::Any;
 use std::fmt::Debug;
 use std::rc::Rc;
 
-pub trait Stats: Debug {
-    fn as_any(&self) -> &dyn Any;
+pub trait Stats: Debug + AsAny {
     fn should_update(&self, new_stats: &Rc<dyn Stats>) -> bool;
 }
 
@@ -14,13 +12,13 @@ pub trait Stats: Debug {
 pub struct Bucket {
     lower: Datum,     // Lower bound value of the bucket.
     upper: Datum,     // Upper bound value of the bucket.
-    ndv: f64,         // Estimated number of distinct values in the bucket.
-    value_count: f64, // Estimated number of values in the bucket.
+    ndv: u64,         // Estimated number of distinct values in the bucket.
+    value_count: u64, // Estimated number of values in the bucket.
 }
 
 impl Bucket {
     #[inline]
-    pub const fn new(lower: Datum, upper: Datum, ndv: f64, value_count: f64) -> Self {
+    pub const fn new(lower: Datum, upper: Datum, ndv: u64, value_count: u64) -> Self {
         Self {
             lower,
             upper,
@@ -40,12 +38,12 @@ impl Bucket {
     }
 
     #[inline]
-    pub fn ndv(&self) -> f64 {
+    pub fn ndv(&self) -> u64 {
         self.ndv
     }
 
     #[inline]
-    pub fn value_count(&self) -> f64 {
+    pub fn value_count(&self) -> u64 {
         self.value_count
     }
 }
@@ -77,7 +75,7 @@ pub struct ColumnStats {
     name: String,
     min: Datum,                   // Min value of the column
     max: Datum,                   // Max value of the column
-    null_count: f64,              // Count of null values
+    null_count: u64,              // Count of null values
     histogram: Option<Histogram>, // Histogram of column
 }
 
@@ -87,7 +85,7 @@ impl ColumnStats {
         name: String,
         min: Datum,
         max: Datum,
-        null_count: f64,
+        null_count: u64,
         histogram: Option<Histogram>,
     ) -> Self {
         Self {
@@ -116,7 +114,7 @@ impl ColumnStats {
         self.max
     }
 
-    pub fn null_count(&self) -> f64 {
+    pub fn null_count(&self) -> u64 {
         self.null_count
     }
 
@@ -129,14 +127,14 @@ impl Metadata for ColumnStats {}
 
 #[derive(Clone, Debug)]
 pub struct Statistics {
-    output_row_count: f64,
+    output_row_count: u64,
 
     /// Statistics of columns, column index -> column stat
     column_stats: Vec<Box<dyn Metadata>>,
 }
 
 impl Statistics {
-    pub const fn new(output_row_count: f64, column_stats: Vec<Box<dyn Metadata>>) -> Self {
+    pub const fn new(output_row_count: u64, column_stats: Vec<Box<dyn Metadata>>) -> Self {
         Self {
             output_row_count,
             column_stats,
@@ -149,10 +147,6 @@ impl Statistics {
 }
 
 impl Stats for Statistics {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
     fn should_update(&self, new_stats: &Rc<dyn Stats>) -> bool {
         let new_stats = new_stats.as_any().downcast_ref::<Statistics>().unwrap();
         new_stats.output_row_count < self.output_row_count
@@ -162,14 +156,13 @@ impl Stats for Statistics {
 #[derive(Clone, Debug)]
 pub struct RelationStats {
     name: String,
-    rows: f64,
+    rows: u64,
     empty: bool,
-
     col_stat_mdids: Vec<Box<dyn MdId>>,
 }
 
 impl RelationStats {
-    pub const fn new(name: String, rows: f64, empty: bool, col_stat_mdids: Vec<Box<dyn MdId>>) -> Self {
+    pub const fn new(name: String, rows: u64, empty: bool, col_stat_mdids: Vec<Box<dyn MdId>>) -> Self {
         Self {
             name,
             rows,
@@ -182,7 +175,7 @@ impl RelationStats {
         &self.name
     }
 
-    pub fn rows(&self) -> f64 {
+    pub fn rows(&self) -> u64 {
         self.rows
     }
 
@@ -238,88 +231,25 @@ impl ColumnMetadata {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
-pub enum StorageType {
-    Heap,
-    External,
-    Virtual,
-}
-
-#[derive(Copy, Clone, Debug)]
-pub enum DistributionPolicyType {
-    Hash,
-    Random,
-    Replicated,
-}
-
 #[derive(Clone, Debug)]
 pub struct RelationMetadata {
     name: String,
-    is_temporary: bool,
-    has_oids: bool,
-    storage_type: StorageType,
-    distribution_policy: DistributionPolicyType,
-    distribution_columns: u64,
-    keys: Vec<u64>,
     column_metadata: Vec<ColumnMetadata>,
-
     rel_stats_mdid: Box<dyn MdId>,
 }
 
 impl RelationMetadata {
     #[allow(clippy::too_many_arguments)]
-    pub const fn new(
-        name: String,
-        is_temporary: bool,
-        has_oids: bool,
-        storage_type: StorageType,
-        distribution_policy: DistributionPolicyType,
-        distribution_columns: u64,
-        keys: Vec<u64>,
-        column_metadata: Vec<ColumnMetadata>,
-
-        rel_stats_mdid: Box<dyn MdId>,
-    ) -> Self {
+    pub const fn new(name: String, column_metadata: Vec<ColumnMetadata>, rel_stats_mdid: Box<dyn MdId>) -> Self {
         Self {
             name,
-            is_temporary,
-            has_oids,
-            storage_type,
-            distribution_policy,
-            distribution_columns,
-            keys,
             column_metadata,
-
             rel_stats_mdid,
         }
     }
 
     pub fn name(&self) -> &str {
         &self.name
-    }
-
-    pub fn is_temporary(&self) -> bool {
-        self.is_temporary
-    }
-
-    pub fn has_oids(&self) -> bool {
-        self.has_oids
-    }
-
-    pub fn storage_type(&self) -> StorageType {
-        self.storage_type
-    }
-
-    pub fn distribution_policy(&self) -> DistributionPolicyType {
-        self.distribution_policy
-    }
-
-    pub fn distribution_columns(&self) -> u64 {
-        self.distribution_columns
-    }
-
-    pub fn keys(&self) -> &[u64] {
-        &self.keys
     }
 
     pub fn column_metadata(&self) -> &[ColumnMetadata] {

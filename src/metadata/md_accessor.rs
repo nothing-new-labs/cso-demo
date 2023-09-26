@@ -16,15 +16,17 @@ impl MdAccessor {
         }
     }
 
-    pub fn retrieve_metadata(&self, md_id: &Box<dyn MdId>) -> Box<dyn Metadata> {
+    pub fn retrieve_metadata(&self, md_id: &Box<dyn MdId>) -> Option<Box<dyn Metadata>> {
         let mut md_cache = self.md_cache.borrow_mut();
         match md_cache.get(md_id) {
-            Some(md) => md.clone(),
-            None => {
-                let md = self.md_provider.retrieve_metadata(md_id);
-                md_cache.insert(md_id.clone(), md.clone());
-                md
-            }
+            Some(md) => Some(md.clone()),
+            None => match self.md_provider.retrieve_metadata(md_id) {
+                Some(md) => {
+                    md_cache.insert(md_id.clone(), md.clone());
+                    Some(md)
+                }
+                None => None,
+            },
         }
     }
 }

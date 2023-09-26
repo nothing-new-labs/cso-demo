@@ -7,14 +7,14 @@
 pub mod cost;
 pub mod datum;
 pub mod expression;
-pub mod memo;
 pub mod metadata;
 pub mod operator;
 pub mod property;
 pub mod rule;
-pub mod task;
 
 mod any;
+mod memo;
+mod task;
 
 use crate::memo::{GroupPlanRef, Memo};
 use crate::metadata::md_accessor::MdAccessor;
