@@ -24,8 +24,21 @@ impl ColumnVar {
     }
 }
 
-impl ScalarExpression for ColumnVar {
+impl ScalarExpression for ColumnVar {}
+
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
+pub struct IsNull {
+    inner: ColumnVar,
+}
+
+impl IsNull {
+    pub fn new(inner: ColumnVar) -> Self {
+        Self { inner }
+    }
+}
+
+impl ScalarExpression for IsNull {
     fn is_boolean_expression(&self) -> bool {
-        true // todo
+        true
     }
 }

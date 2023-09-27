@@ -1,5 +1,5 @@
 use cso_demo::datum::Datum;
-use cso_demo::expression::{ColumnVar, ScalarExpression};
+use cso_demo::expression::{ColumnVar, IsNull, ScalarExpression};
 use cso_demo::metadata::md_accessor::MdAccessor;
 use cso_demo::metadata::md_provider::TempMdProvider;
 use cso_demo::metadata::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};
@@ -25,7 +25,7 @@ fn logical_scan() -> LogicalPlan {
 }
 
 fn logical_filter(input: Vec<LogicalPlan>) -> LogicalPlan {
-    let predicate = ColumnVar::new(0);
+    let predicate = IsNull::new(ColumnVar::new(0));
     let filter = LogicalFilter::new(Rc::new(predicate));
     LogicalPlan::new(Rc::new(filter), input, vec![])
 }
