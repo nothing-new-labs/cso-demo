@@ -24,4 +24,8 @@ impl ColumnVar {
     }
 }
 
-impl ScalarExpression for ColumnVar {}
+impl ScalarExpression for ColumnVar {
+    fn is_boolean_expression(&self) -> bool {
+        true // todo
+    }
+}

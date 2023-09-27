@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
-type RequireToOutputMap = HashMap<PhysicalProperties, Rc<PhysicalProperties>>;
+type RequireToOutputMap = HashMap<Rc<PhysicalProperties>, Rc<PhysicalProperties>>;
 
 #[derive(Debug)]
 pub struct GroupPlan {
@@ -92,6 +92,18 @@ impl GroupPlan {
 
     pub fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {
         self.op.physical_op().compute_cost(stats)
+    }
+
+    pub fn update_require_to_output_map(
+        &mut self,
+        reqd_prop: &Rc<PhysicalProperties>,
+        output_map: Rc<PhysicalProperties>,
+    ) {
+        self.require_to_output_map.insert(reqd_prop.clone(), output_map);
+    }
+
+    pub fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
+        self.op.physical_op().derive_output_properties(child_props)
     }
 }
 
@@ -208,7 +220,7 @@ impl Group {
     pub fn update_child_required_props(
         &mut self,
         required_prop: &Rc<PhysicalProperties>,
-        child_required_props: &[Rc<PhysicalProperties>],
+        child_required_props: Vec<Rc<PhysicalProperties>>,
         curr_cost: Cost,
     ) {
         if let Some((cost, _child_reqds)) = self.child_required_properties.get(required_prop) {
@@ -219,7 +231,7 @@ impl Group {
         }
         // update lowest_cost_plans
         self.child_required_properties
-            .insert(required_prop.clone(), (curr_cost, child_required_props.to_owned()));
+            .insert(required_prop.clone(), (curr_cost, child_required_props));
     }
 
     fn best_plan(&self, required_prop: &PhysicalProperties) -> Option<&(Cost, GroupPlanRef)> {
@@ -235,6 +247,10 @@ impl Group {
         let operator = plan.borrow().operator().physical_op().clone();
 
         let mut inputs = Vec::new();
+        if plan.borrow().inputs().is_empty() {
+            return PhysicalPlan::new(operator, inputs);
+        }
+
         let (_, child_reqd_props) = self.child_required_props(required_properties).unwrap();
         for (group, child_reqd_prop) in plan.borrow().inputs().iter().zip(child_reqd_props) {
             let child_plan = group.borrow().extract_best_plan(child_reqd_prop);

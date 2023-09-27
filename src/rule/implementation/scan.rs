@@ -36,6 +36,10 @@ impl Rule for ScanImplementation {
             logical_scan.table_desc().clone(),
             logical_scan.output_columns().to_vec(),
         );
-        vec![Plan::new(Operator::Physical(Rc::new(physical_scan)), vec![])]
+        vec![Plan::new(
+            Operator::Physical(Rc::new(physical_scan)),
+            vec![],
+            input.group_plan.clone(),
+        )]
     }
 }

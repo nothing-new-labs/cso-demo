@@ -1,10 +1,7 @@
 use crate::memo::GroupPlanRef;
-use crate::property::PhysicalProperties;
 use crate::rule::{Binding, RuleRef};
 use crate::task::{EnforceAndCostTask, OptimizePlanTask, Task, TaskRunner};
 use crate::OptimizerContext;
-use std::ops::Deref;
-use std::rc::Rc;
 
 pub struct ApplyRuleTask {
     plan: GroupPlanRef,
@@ -27,10 +24,9 @@ impl ApplyRuleTask {
         assert!(!self.plan.borrow().is_rule_explored(self.rule.as_ref()));
 
         let rule = self.rule.as_ref();
-        let plan = self.plan.borrow();
-        let group = plan.group();
         let pattern = self.rule.pattern();
-        let binding = Binding::new(pattern, plan.deref());
+        let binding = Binding::new(pattern, &self.plan);
+
         let mut new_plans = Vec::new();
 
         for plan in binding {
@@ -43,12 +39,14 @@ impl ApplyRuleTask {
         }
 
         for plan in new_plans {
-            let group_plan = optimizer_ctx.memo_mut().copy_in_plan(Some(group.clone()), &plan);
+            let group_plan = optimizer_ctx
+                .memo_mut()
+                .copy_in_plan(Some(self.plan.borrow().group().clone()), &plan);
             if group_plan.borrow().operator().is_logical() {
                 task_runner.push_task(OptimizePlanTask::new(group_plan));
             } else {
-                let required_prop: PhysicalProperties = PhysicalProperties::new();
-                let new_task = EnforceAndCostTask::new(group_plan, Rc::new(required_prop.clone()));
+                let required_prop = optimizer_ctx.required_properties();
+                let new_task = EnforceAndCostTask::new(group_plan, required_prop.clone());
                 task_runner.push_task(new_task);
             }
         }
