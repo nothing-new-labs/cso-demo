@@ -4,10 +4,13 @@ pub mod statistics;
 
 use crate::any::AsAny;
 use dyn_clonable::clonable;
+use serde::{Deserialize, Serialize};
+use serde_json_any_key::any_key_map;
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::hash::{Hash, Hasher};
 
+#[typetag::serde(tag = "type")]
 #[clonable]
 pub trait Metadata: AsAny + Clone + Debug {}
 
@@ -18,6 +21,7 @@ impl dyn Metadata {
     }
 }
 
+#[typetag::serde(tag = "type")]
 #[clonable]
 pub trait MdId: AsAny + Clone + Display + Debug {
     fn equal(&self, other: &dyn MdId) -> bool;
@@ -45,6 +49,7 @@ impl dyn MdId {
     }
 }
 
+#[typetag::serde]
 impl MdId for u64 {
     fn equal(&self, other: &dyn MdId) -> bool {
         let other = other.downcast_ref::<u64>().unwrap();
@@ -54,7 +59,9 @@ impl MdId for u64 {
     fn hash(&self) {}
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct MdCache {
+    #[serde(with = "any_key_map")]
     cache: HashMap<Box<dyn MdId>, Box<dyn Metadata>>,
 }
 
