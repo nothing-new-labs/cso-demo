@@ -97,9 +97,9 @@ impl GroupPlan {
     pub fn update_require_to_output_map(
         &mut self,
         reqd_prop: &Rc<PhysicalProperties>,
-        output_map: Rc<PhysicalProperties>,
+        output_map: &Rc<PhysicalProperties>,
     ) {
-        self.require_to_output_map.insert(reqd_prop.clone(), output_map);
+        self.require_to_output_map.insert(reqd_prop.clone(), output_map.clone());
     }
 
     pub fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
