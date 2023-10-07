@@ -124,8 +124,7 @@ fn expected() -> PhysicalPlan {
         }],
     };
     let sort = PhysicalSort::new(order);
-    let sort = PhysicalPlan::new(Rc::new(sort), vec![project]);
-    sort
+    PhysicalPlan::new(Rc::new(sort), vec![project])
 }
 
 #[test]
