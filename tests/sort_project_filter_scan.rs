@@ -1,7 +1,7 @@
 use cso_demo::datum::Datum;
 use cso_demo::expression::{ColumnVar, IsNull, ScalarExpression};
 use cso_demo::metadata::md_accessor::MdAccessor;
-use cso_demo::metadata::md_provider::TempMdProvider;
+use cso_demo::metadata::md_provider::CachedMdProvider;
 use cso_demo::metadata::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};
 use cso_demo::metadata::{MdCache, MdId, Metadata};
 use cso_demo::operator::logical_filter::LogicalFilter;
@@ -94,7 +94,7 @@ fn md_cache() -> MdCache {
 
 fn metadata_accessor() -> MdAccessor {
     let md_cache = md_cache();
-    let md_provider = Rc::new(TempMdProvider::new(md_cache));
+    let md_provider = Rc::new(CachedMdProvider::new(md_cache));
     MdAccessor::new(md_provider)
 }
 
