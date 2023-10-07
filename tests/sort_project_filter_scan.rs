@@ -98,7 +98,7 @@ fn metadata_accessor() -> MdAccessor {
     MdAccessor::new(md_provider)
 }
 
-fn expected() -> PhysicalPlan {
+fn expected_physical_plan() -> PhysicalPlan {
     let mdid = Box::new(2u64) as Box<dyn MdId>;
     let table_desc = TableDesc::new(mdid);
     let output_columns = vec![ColumnVar::new(0), ColumnVar::new(1), ColumnVar::new(2)];
@@ -138,5 +138,5 @@ fn test_sort_project_filter_scan() {
     let md_accessor = metadata_accessor();
 
     let physical_plan = optimizer.optimize(project, required_properties, md_accessor);
-    assert_eq!(physical_plan, expected());
+    assert_eq!(physical_plan, expected_physical_plan());
 }
