@@ -7,20 +7,21 @@ use cso_demo::metadata::{MdCache, MdId, Metadata};
 use cso_demo::operator::logical_filter::LogicalFilter;
 use cso_demo::operator::logical_project::LogicalProject;
 use cso_demo::operator::logical_scan::{LogicalScan, TableDesc};
-use cso_demo::operator::physical_sort::{OrderSpec, Ordering};
+use cso_demo::operator::physical_filter::PhysicalFilter;
+use cso_demo::operator::physical_project::PhysicalProject;
+use cso_demo::operator::physical_scan::PhysicalScan;
+use cso_demo::operator::physical_sort::{OrderSpec, Ordering, PhysicalSort};
 use cso_demo::property::sort_property::SortProperty;
 use cso_demo::property::PhysicalProperties;
-use cso_demo::{LogicalPlan, Optimizer, Options};
+use cso_demo::{LogicalPlan, Optimizer, Options, PhysicalPlan};
 use std::rc::Rc;
 
 fn logical_scan() -> LogicalPlan {
     let mdid = Box::new(2u64) as Box<dyn MdId>;
     let table_desc = TableDesc::new(mdid);
-
     let output_columns = vec![ColumnVar::new(0), ColumnVar::new(1), ColumnVar::new(2)];
 
     let scan = LogicalScan::new(table_desc, output_columns);
-
     LogicalPlan::new(Rc::new(scan), vec![], vec![])
 }
 
@@ -97,8 +98,38 @@ fn metadata_accessor() -> MdAccessor {
     MdAccessor::new(md_provider)
 }
 
+fn expected() -> PhysicalPlan {
+    let mdid = Box::new(2u64) as Box<dyn MdId>;
+    let table_desc = TableDesc::new(mdid);
+    let output_columns = vec![ColumnVar::new(0), ColumnVar::new(1), ColumnVar::new(2)];
+    let scan = PhysicalScan::new(table_desc, output_columns);
+    let scan = PhysicalPlan::new(Rc::new(scan), vec![]);
+
+    let predicate = IsNull::new(ColumnVar::new(0));
+    let filter = PhysicalFilter::new(Rc::new(predicate));
+    let filter = PhysicalPlan::new(Rc::new(filter), vec![scan]);
+
+    let project = vec![
+        Rc::new(ColumnVar::new(1)) as Rc<dyn ScalarExpression>,
+        Rc::new(ColumnVar::new(2)) as Rc<dyn ScalarExpression>,
+    ];
+    let project = PhysicalProject::new(project);
+    let project = PhysicalPlan::new(Rc::new(project), vec![filter]);
+
+    let order = OrderSpec {
+        order_desc: vec![Ordering {
+            key: ColumnVar::new(1),
+            ascending: true,
+            nulls_first: true,
+        }],
+    };
+    let sort = PhysicalSort::new(order);
+    let sort = PhysicalPlan::new(Rc::new(sort), vec![project]);
+    sort
+}
+
 #[test]
-fn temp() {
+fn test_sort_project_filter_scan() {
     let mut optimizer = Optimizer::new(Options::default());
 
     let scan = logical_scan();
@@ -108,6 +139,5 @@ fn temp() {
     let md_accessor = metadata_accessor();
 
     let physical_plan = optimizer.optimize(project, required_properties, md_accessor);
-
-    dbg!(physical_plan);
+    assert_eq!(physical_plan, expected());
 }

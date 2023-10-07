@@ -11,7 +11,7 @@ use crate::cost::Cost;
 use crate::metadata::md_accessor::MdAccessor;
 use crate::metadata::statistics::Stats;
 use crate::property::PhysicalProperties;
-use std::any::Any;
+use dyn_clonable::clonable;
 use std::fmt::Debug;
 use std::rc::Rc;
 
@@ -28,13 +28,22 @@ impl dyn LogicalOperator {
     }
 }
 
-pub trait PhysicalOperator: Any + Debug {
+#[clonable]
+pub trait PhysicalOperator: AsAny + Debug + Clone {
     fn name(&self) -> &str;
     fn operator_id(&self) -> i16;
     fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties>;
     fn required_properties(&self, input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>>;
     fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
         Cost::new()
+    }
+    fn equal(&self, other: &dyn PhysicalOperator) -> bool;
+}
+
+impl dyn PhysicalOperator {
+    #[inline]
+    pub fn downcast_ref<T: PhysicalOperator>(&self) -> Option<&T> {
+        self.as_any().downcast_ref::<T>()
     }
 }
 

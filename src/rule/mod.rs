@@ -210,7 +210,6 @@ impl<'a> Binding<'a> {
             return None;
         }
 
-        // todo
         loop {
             self.group_trace_id = 0;
             if let Some(last) = self.group_plan_index.last_mut() {

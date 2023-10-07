@@ -69,6 +69,12 @@ impl PhysicalPlan {
     }
 }
 
+impl PartialEq<Self> for PhysicalPlan {
+    fn eq(&self, other: &Self) -> bool {
+        self.op.equal(other.op.as_ref()) && self.inputs.eq(other.inputs())
+    }
+}
+
 #[derive(Clone)]
 pub struct Plan {
     op: Operator,

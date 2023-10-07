@@ -4,7 +4,7 @@ use crate::operator::PhysicalOperator;
 use crate::property::PhysicalProperties;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PhysicalScan {
     _table_desc: TableDesc,
     _output_columns: Vec<ColumnVar>,
@@ -34,5 +34,10 @@ impl PhysicalOperator for PhysicalScan {
 
     fn required_properties(&self, _input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
         vec![vec![]]
+    }
+
+    fn equal(&self, other: &dyn PhysicalOperator) -> bool {
+        let other = other.downcast_ref::<PhysicalScan>().unwrap();
+        self._table_desc.eq(&other._table_desc) && self._output_columns.eq(&other._output_columns)
     }
 }

@@ -14,11 +14,15 @@ impl TableDesc {
     pub const fn new(md_id: Box<dyn MdId>) -> Self {
         Self { md_id }
     }
-}
 
-impl TableDesc {
     fn md_id(&self) -> &Box<dyn MdId> {
         &self.md_id
+    }
+}
+
+impl PartialEq for TableDesc {
+    fn eq(&self, other: &Self) -> bool {
+        self.md_id.equal(other.md_id().as_ref())
     }
 }
 
