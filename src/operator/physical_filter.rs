@@ -37,8 +37,10 @@ impl PhysicalOperator for PhysicalFilter {
     }
 
     fn equal(&self, other: &dyn PhysicalOperator) -> bool {
-        let other = other.downcast_ref::<PhysicalFilter>().unwrap();
-        self.eq(other)
+        match other.downcast_ref::<PhysicalFilter>() {
+            Some(other) => self.eq(other),
+            None => false,
+        }
     }
 }
 

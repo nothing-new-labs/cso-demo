@@ -32,7 +32,9 @@ impl PhysicalOperator for PhysicalProject {
     }
 
     fn equal(&self, other: &dyn PhysicalOperator) -> bool {
-        let other = other.downcast_ref::<PhysicalProject>().unwrap();
-        self.eq(other)
+        match other.downcast_ref::<PhysicalProject>() {
+            Some(other) => self.eq(other),
+            None => false,
+        }
     }
 }
