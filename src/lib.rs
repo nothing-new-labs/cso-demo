@@ -27,9 +27,29 @@ use std::rc::Rc;
 pub struct LogicalPlan {
     op: Rc<dyn LogicalOperator>,
     inputs: Vec<LogicalPlan>,
-    _required_properties: Vec<PhysicalProperties>,
+    required_properties: Vec<PhysicalProperties>,
 }
 
+impl LogicalPlan {
+    #[inline]
+    pub const fn new(
+        op: Rc<dyn LogicalOperator>,
+        inputs: Vec<LogicalPlan>,
+        required_properties: Vec<PhysicalProperties>,
+    ) -> Self {
+        Self {
+            op,
+            inputs,
+            required_properties,
+        }
+    }
+
+    pub fn required_properties(&self) -> &[PhysicalProperties] {
+        &self.required_properties
+    }
+}
+
+#[derive(Debug)]
 pub struct PhysicalPlan {
     op: Rc<dyn PhysicalOperator>,
     inputs: Vec<PhysicalPlan>,
@@ -49,6 +69,12 @@ impl PhysicalPlan {
     }
 }
 
+impl PartialEq<Self> for PhysicalPlan {
+    fn eq(&self, other: &Self) -> bool {
+        self.op.equal(other.op.as_ref()) && self.inputs.eq(other.inputs())
+    }
+}
+
 #[derive(Clone)]
 pub struct Plan {
     op: Operator,
@@ -59,12 +85,12 @@ pub struct Plan {
 }
 
 impl Plan {
-    pub fn new(op: Operator, inputs: Vec<Plan>) -> Self {
+    pub fn new(op: Operator, inputs: Vec<Plan>, group_plan: Option<GroupPlanRef>) -> Self {
         Plan {
             op,
             inputs,
             _property: LogicalProperties {},
-            group_plan: None,
+            group_plan,
             _required_properties: vec![],
         }
     }
@@ -100,7 +126,7 @@ impl Optimizer {
         required_properties: Rc<PhysicalProperties>,
         md_accessor: MdAccessor,
     ) -> PhysicalPlan {
-        let mut optimizer_ctx = OptimizerContext::new(md_accessor);
+        let mut optimizer_ctx = OptimizerContext::new(md_accessor, required_properties.clone());
         optimizer_ctx.memo_mut().init(plan);
         let mut task_runner = TaskRunner::new();
         let initial_task =
@@ -115,14 +141,16 @@ pub struct OptimizerContext {
     memo: Memo,
     rule_set: RuleSet,
     md_accessor: MdAccessor,
+    required_properties: Rc<PhysicalProperties>,
 }
 
 impl OptimizerContext {
-    fn new(md_accessor: MdAccessor) -> Self {
+    fn new(md_accessor: MdAccessor, required_properties: Rc<PhysicalProperties>) -> Self {
         OptimizerContext {
             memo: Memo::new(),
             md_accessor,
             rule_set: RuleSet::new(),
+            required_properties,
         }
     }
 
@@ -140,5 +168,9 @@ impl OptimizerContext {
 
     pub fn md_accessor(&self) -> &MdAccessor {
         &self.md_accessor
+    }
+
+    pub fn required_properties(&self) -> &Rc<PhysicalProperties> {
+        &self.required_properties
     }
 }

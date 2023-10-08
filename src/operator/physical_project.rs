@@ -3,7 +3,7 @@ use crate::operator::PhysicalOperator;
 use crate::property::PhysicalProperties;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PhysicalProject {
     _project: Vec<Rc<dyn ScalarExpression>>,
 }
@@ -29,5 +29,10 @@ impl PhysicalOperator for PhysicalProject {
 
     fn required_properties(&self, input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
         vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
+    }
+
+    fn equal(&self, other: &dyn PhysicalOperator) -> bool {
+        let other = other.downcast_ref::<PhysicalProject>().unwrap();
+        self.eq(other)
     }
 }

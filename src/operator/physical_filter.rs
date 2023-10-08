@@ -3,7 +3,7 @@ use crate::operator::PhysicalOperator;
 use crate::property::PhysicalProperties;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PhysicalFilter {
     predicate: Rc<dyn ScalarExpression>,
 }
@@ -34,5 +34,16 @@ impl PhysicalOperator for PhysicalFilter {
 
     fn required_properties(&self, input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
         vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
+    }
+
+    fn equal(&self, other: &dyn PhysicalOperator) -> bool {
+        let other = other.downcast_ref::<PhysicalFilter>().unwrap();
+        self.eq(other)
+    }
+}
+
+impl PartialEq for PhysicalFilter {
+    fn eq(&self, other: &Self) -> bool {
+        self.predicate.equal(other.predicate())
     }
 }

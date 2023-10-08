@@ -16,7 +16,7 @@ pub struct OrderSpec {
     pub order_desc: Vec<Ordering>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PhysicalSort {
     order_spec: OrderSpec,
 }
@@ -48,5 +48,10 @@ impl PhysicalOperator for PhysicalSort {
         vec![vec![PhysicalProperties::with_sort_property(SortProperty::with_order(
             self.order_spec.clone(),
         ))]]
+    }
+
+    fn equal(&self, other: &dyn PhysicalOperator) -> bool {
+        let other = other.downcast_ref::<PhysicalSort>().unwrap();
+        self.eq(other)
     }
 }

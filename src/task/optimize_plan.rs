@@ -23,7 +23,7 @@ impl OptimizePlanTask {
     fn filter_invalid_rules(plan: &GroupPlan, candidate_rules: &[RuleRef], valid_rules: &mut Vec<RuleRef>) {
         candidate_rules
             .iter()
-            .filter(|rule| plan.is_rule_explored(rule.as_ref()) || !rule.pattern().match_without_child(plan))
+            .filter(|rule| !plan.is_rule_explored(rule.as_ref()) && rule.pattern().match_without_child(plan))
             .for_each(|rule| valid_rules.push(rule.clone()));
     }
 
