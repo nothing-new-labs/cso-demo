@@ -6,20 +6,20 @@
 
 pub mod datum;
 pub mod expression;
-pub mod metadata;
 pub mod operator;
 pub mod property;
 pub mod rule;
+pub mod statistics;
 
 mod memo;
 mod task;
 
 use crate::memo::{GroupPlanRef, Memo};
-use crate::metadata::md_accessor::MdAccessor;
 use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::RuleSet;
 use crate::task::{OptimizeGroupTask, TaskRunner};
+use cso_core::metadata::accessor::MdAccessor;
 use std::rc::Rc;
 
 pub struct LogicalPlan {

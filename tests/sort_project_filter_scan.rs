@@ -1,10 +1,9 @@
 use cso_core::expression::ScalarExpression;
+use cso_core::metadata::accessor::MdAccessor;
+use cso_core::metadata::provider::CachedMdProvider;
+use cso_core::metadata::{MdCache, MdId, Metadata};
 use cso_demo::datum::Datum;
 use cso_demo::expression::{ColumnVar, IsNull};
-use cso_demo::metadata::md_accessor::MdAccessor;
-use cso_demo::metadata::md_provider::CachedMdProvider;
-use cso_demo::metadata::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};
-use cso_demo::metadata::{MdCache, MdId, Metadata};
 use cso_demo::operator::logical_filter::LogicalFilter;
 use cso_demo::operator::logical_project::LogicalProject;
 use cso_demo::operator::logical_scan::{LogicalScan, TableDesc};
@@ -14,6 +13,7 @@ use cso_demo::operator::physical_scan::PhysicalScan;
 use cso_demo::operator::physical_sort::{OrderSpec, Ordering, PhysicalSort};
 use cso_demo::property::sort_property::SortProperty;
 use cso_demo::property::PhysicalProperties;
+use cso_demo::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};
 use cso_demo::{LogicalPlan, Optimizer, Options, PhysicalPlan};
 use std::rc::Rc;
 

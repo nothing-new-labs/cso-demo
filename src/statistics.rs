@@ -1,13 +1,10 @@
 use crate::datum::Datum;
-use crate::metadata::{MdId, Metadata};
 use cso_core::any::AsAny;
+use cso_core::metadata::statistics::Stats;
+use cso_core::metadata::{MdId, Metadata};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::rc::Rc;
-
-pub trait Stats: Debug + AsAny {
-    fn should_update(&self, new_stats: &Rc<dyn Stats>) -> bool;
-}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Bucket {

@@ -1,6 +1,6 @@
+use cso_core::metadata::{MdCache, MdId, Metadata};
 use cso_demo::datum::Datum;
-use cso_demo::metadata::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};
-use cso_demo::metadata::{MdCache, MdId, Metadata};
+use cso_demo::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};
 
 #[test]
 fn test_serialize_md_cache() {

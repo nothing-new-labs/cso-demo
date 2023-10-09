@@ -1,4 +1,4 @@
-use crate::metadata::md_provider::MdProvider;
+use crate::metadata::provider::MdProvider;
 use crate::metadata::{MdCache, MdId, Metadata};
 use std::cell::RefCell;
 use std::rc::Rc;

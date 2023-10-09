@@ -1,8 +1,8 @@
-pub mod md_accessor;
-pub mod md_provider;
+pub mod accessor;
+pub mod provider;
 pub mod statistics;
 
-use cso_core::any::AsAny;
+use crate::any::AsAny;
 use dyn_clonable::clonable;
 use serde::{Deserialize, Serialize};
 use serde_json_any_key::any_key_map;
