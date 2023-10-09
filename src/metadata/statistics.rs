@@ -1,6 +1,6 @@
-use crate::any::AsAny;
 use crate::datum::Datum;
 use crate::metadata::{MdId, Metadata};
+use cso_core::any::AsAny;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::rc::Rc;

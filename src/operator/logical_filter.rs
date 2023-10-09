@@ -1,7 +1,7 @@
-use crate::expression::ScalarExpression;
 use crate::metadata::md_accessor::MdAccessor;
 use crate::metadata::statistics::Stats;
 use crate::operator::LogicalOperator;
+use cso_core::expression::ScalarExpression;
 use std::rc::Rc;
 
 #[derive(Debug)]

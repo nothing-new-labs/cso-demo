@@ -1,6 +1,6 @@
-use crate::expression::ScalarExpression;
 use crate::operator::PhysicalOperator;
 use crate::property::PhysicalProperties;
+use cso_core::expression::ScalarExpression;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

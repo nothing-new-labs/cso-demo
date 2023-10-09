@@ -4,7 +4,6 @@
 #![allow(clippy::new_without_default)]
 #![allow(clippy::borrowed_box)]
 
-pub mod cost;
 pub mod datum;
 pub mod expression;
 pub mod metadata;
@@ -12,7 +11,6 @@ pub mod operator;
 pub mod property;
 pub mod rule;
 
-mod any;
 mod memo;
 mod task;
 

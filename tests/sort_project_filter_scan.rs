@@ -1,5 +1,6 @@
+use cso_core::expression::ScalarExpression;
 use cso_demo::datum::Datum;
-use cso_demo::expression::{ColumnVar, IsNull, ScalarExpression};
+use cso_demo::expression::{ColumnVar, IsNull};
 use cso_demo::metadata::md_accessor::MdAccessor;
 use cso_demo::metadata::md_provider::CachedMdProvider;
 use cso_demo::metadata::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};

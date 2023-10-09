@@ -6,11 +6,11 @@ pub mod physical_project;
 pub mod physical_scan;
 pub mod physical_sort;
 
-use crate::any::AsAny;
-use crate::cost::Cost;
 use crate::metadata::md_accessor::MdAccessor;
 use crate::metadata::statistics::Stats;
 use crate::property::PhysicalProperties;
+use cso_core::any::AsAny;
+use cso_core::cost::Cost;
 use dyn_clonable::clonable;
 use std::fmt::Debug;
 use std::rc::Rc;

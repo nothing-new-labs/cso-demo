@@ -1,10 +1,10 @@
-use crate::cost::Cost;
 use crate::metadata::statistics::Stats;
 use crate::operator::Operator;
 use crate::property::PhysicalProperties;
 use crate::rule::Rule;
 use crate::{LogicalPlan, OptimizerContext, PhysicalPlan, Plan};
 use bit_set::BitSet;
+use cso_core::cost::Cost;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
