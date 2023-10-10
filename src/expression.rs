@@ -7,7 +7,6 @@ pub trait ScalarExpression: AsAny + Debug + Clone {
     fn is_boolean_expression(&self) -> bool {
         false
     }
-
     fn equal(&self, other: &dyn ScalarExpression) -> bool;
 }
 

@@ -52,8 +52,10 @@ impl dyn MdId {
 #[typetag::serde]
 impl MdId for u64 {
     fn equal(&self, other: &dyn MdId) -> bool {
-        let other = other.downcast_ref::<u64>().unwrap();
-        self.eq(other)
+        match other.downcast_ref::<u64>() {
+            Some(other) => self.eq(other),
+            None => false,
+        }
     }
 
     fn hash(&self) {}
