@@ -50,7 +50,7 @@ fn required_properties() -> Rc<PhysicalProperties> {
         }],
     };
     let sort_property = SortProperty::with_order(order);
-    PhysicalProperties::with_sort_property(sort_property)
+    PhysicalProperties::with_property(Box::new(sort_property))
 }
 
 fn md_cache() -> MdCache {
