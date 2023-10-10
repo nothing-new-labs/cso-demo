@@ -65,11 +65,7 @@ impl PhysicalProperties {
         // TODO: multiple properties
 
         if self.properties.is_empty() || required_prop.properties.is_empty() {
-            return if self.properties.is_empty() && required_prop.properties.is_empty() {
-                true
-            } else {
-                false
-            };
+            return self.properties.is_empty() && required_prop.properties.is_empty();
         }
 
         self.properties[0].satisfy(required_prop.properties[0].as_ref())
