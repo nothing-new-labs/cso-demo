@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 pub fn create_rule_set() -> RuleSet {
     let mut rule_set = RuleSet::new();
-    rule_set.register_implement_rules(vec![
+    rule_set.set_implement_rules(vec![
         Rc::new(ScanImplementation::new()),
         Rc::new(FilterImplementation::new()),
         Rc::new(ProjectImplementation::new()),

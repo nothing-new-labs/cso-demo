@@ -133,12 +133,12 @@ impl RuleSet {
         &self.implement_rules
     }
 
-    pub fn register_transform_rules(&mut self, rules: Vec<RuleRef>) {
+    pub fn set_transform_rules(&mut self, rules: Vec<RuleRef>) {
         assert!(rules.iter().all(|x| { x.is_transformation() }));
         self.transform_rules = rules;
     }
 
-    pub fn register_implement_rules(&mut self, rules: Vec<RuleRef>) {
+    pub fn set_implement_rules(&mut self, rules: Vec<RuleRef>) {
         assert!(rules.iter().all(|x| { x.is_implementation() }));
         self.transform_rules = rules;
     }
