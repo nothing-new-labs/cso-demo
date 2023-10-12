@@ -1,12 +1,12 @@
 use crate::memo::GroupRef;
 use crate::task::{OptimizePlanTask, Task, TaskRunner};
-use crate::OptimizerContext;
+use crate::{OptimizerContext, OptimizerType};
 
 pub struct ExploreGroupTask {
     group: GroupRef,
 }
 
-impl From<ExploreGroupTask> for Task {
+impl<T: OptimizerType> From<ExploreGroupTask> for Task<T> {
     #[inline]
     fn from(task: ExploreGroupTask) -> Self {
         Task::ExploreGroup(task)
@@ -18,7 +18,11 @@ impl ExploreGroupTask {
         ExploreGroupTask { group }
     }
 
-    pub(super) fn execute(self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
+    pub(super) fn execute<T: OptimizerType>(
+        self,
+        task_runner: &mut TaskRunner<T>,
+        _optimizer_ctx: &mut OptimizerContext<T>,
+    ) {
         let mut group = self.group.borrow_mut();
         if group.is_explored() {
             return;

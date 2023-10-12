@@ -56,19 +56,19 @@ fn test_serialize_md_cache() {
 
     let new_md_cache: MdCache = serde_json::from_str(md_string.as_str()).unwrap();
 
-    let new_relation_stats = new_md_cache.get(&relation_stats_id).unwrap();
+    let new_relation_stats = new_md_cache.get(&*relation_stats_id).unwrap();
     let new_relation_stats = new_relation_stats
         .downcast_ref::<RelationStats>()
         .expect("RelationStats expected");
     debug_assert_eq!(new_relation_stats.rows(), relation_stats.rows());
 
-    let new_relation_md = new_md_cache.get(&relation_md_id).unwrap();
+    let new_relation_md = new_md_cache.get(relation_md_id.as_ref()).unwrap();
     let new_relation_md = new_relation_md
         .downcast_ref::<RelationMetadata>()
         .expect("RelationMetadata expected");
     debug_assert_eq!(new_relation_md.name(), relation_md.name());
 
-    let new_column_stats = new_md_cache.get(&column_stats_id).unwrap();
+    let new_column_stats = new_md_cache.get(column_stats_id.as_ref()).unwrap();
     let new_column_stats = new_column_stats
         .downcast_ref::<ColumnStats>()
         .expect("ColumnStats expected");

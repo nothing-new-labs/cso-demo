@@ -2,8 +2,8 @@ use crate::cost::Cost;
 use crate::metadata::Stats;
 use crate::operator::Operator;
 use crate::property::PhysicalProperties;
-use crate::rule::Rule;
-use crate::{LogicalPlan, OptimizerContext, PhysicalPlan, Plan};
+use crate::rule::{Rule, RuleId};
+use crate::{LogicalPlan, OptimizerContext, OptimizerType, PhysicalPlan, Plan};
 use bit_set::BitSet;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -59,8 +59,8 @@ impl GroupPlan {
         &self.inputs
     }
 
-    pub fn is_rule_explored(&self, rule: &dyn Rule) -> bool {
-        self.rule_masks.contains(rule.rule_id() as usize)
+    pub fn is_rule_explored<T: OptimizerType>(&self, rule: &dyn Rule<OptimizerType = T>) -> bool {
+        self.rule_masks.contains(rule.rule_id().as_usize())
     }
 
     pub fn is_stats_derived(&self) -> bool {
@@ -71,7 +71,7 @@ impl GroupPlan {
         self.stats_derived = true;
     }
 
-    pub fn derive_statistics(&self, optimizer_ctx: &OptimizerContext) -> Rc<dyn Stats> {
+    pub fn derive_statistics<T: OptimizerType>(&self, optimizer_ctx: &OptimizerContext<T>) -> Rc<dyn Stats> {
         let mut input_stats = Vec::with_capacity(self.inputs.len());
 
         for input in &self.inputs {

@@ -1,7 +1,7 @@
 use crate::memo::GroupRef;
 use crate::property::PhysicalProperties;
 use crate::task::{EnforceAndCostTask, OptimizePlanTask, Task, TaskRunner};
-use crate::OptimizerContext;
+use crate::{OptimizerContext, OptimizerType};
 use std::rc::Rc;
 
 pub struct OptimizeGroupTask {
@@ -9,7 +9,7 @@ pub struct OptimizeGroupTask {
     required_prop: Rc<PhysicalProperties>,
 }
 
-impl From<OptimizeGroupTask> for Task {
+impl<T: OptimizerType> From<OptimizeGroupTask> for Task<T> {
     #[inline]
     fn from(task: OptimizeGroupTask) -> Self {
         Task::OptimizeGroup(task)
@@ -21,7 +21,11 @@ impl OptimizeGroupTask {
         OptimizeGroupTask { group, required_prop }
     }
 
-    pub(super) fn execute(self, task_runner: &mut TaskRunner, _optimizer_ctx: &mut OptimizerContext) {
+    pub(super) fn execute<T: OptimizerType>(
+        self,
+        task_runner: &mut TaskRunner<T>,
+        _optimizer_ctx: &mut OptimizerContext<T>,
+    ) {
         let mut group = self.group.borrow_mut();
 
         if !group.is_explored() {

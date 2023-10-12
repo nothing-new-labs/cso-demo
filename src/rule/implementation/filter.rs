@@ -1,5 +1,7 @@
 use crate::operator::logical_filter::LogicalFilter;
 use crate::operator::physical_filter::PhysicalFilter;
+use crate::rule::RuleId;
+use crate::Demo;
 use cso_core::operator::Operator;
 use cso_core::rule::{Pattern, PatternType, Rule};
 use cso_core::{OptimizerContext, Plan};
@@ -18,19 +20,21 @@ impl FilterImplementation {
 }
 
 impl Rule for FilterImplementation {
+    type OptimizerType = Demo;
+
     fn name(&self) -> &str {
         "filter implementation"
     }
 
-    fn rule_id(&self) -> u16 {
-        2
+    fn rule_id(&self) -> RuleId {
+        RuleId::FilterImplementation
     }
 
     fn pattern(&self) -> &Pattern {
         &self.pattern
     }
 
-    fn transform(&self, input: &Plan, _context: &mut OptimizerContext) -> Vec<Plan> {
+    fn transform(&self, input: &Plan, _context: &mut OptimizerContext<Demo>) -> Vec<Plan> {
         let logical_filter = input.operator().logical_op().downcast_ref::<LogicalFilter>().unwrap();
         let physical_filter = PhysicalFilter::new(logical_filter.predicate().clone());
         vec![Plan::new(

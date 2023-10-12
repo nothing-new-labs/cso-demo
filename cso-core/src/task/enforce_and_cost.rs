@@ -1,7 +1,7 @@
 use crate::memo::{GroupPlanRef, Memo};
 use crate::property::PhysicalProperties;
 use crate::task::{OptimizeGroupTask, Task, TaskRunner};
-use crate::OptimizerContext;
+use crate::{OptimizerContext, OptimizerType};
 use std::rc::Rc;
 
 pub struct EnforceAndCostTask {
@@ -10,7 +10,7 @@ pub struct EnforceAndCostTask {
     prev_index: usize,
 }
 
-impl From<EnforceAndCostTask> for Task {
+impl<T: OptimizerType> From<EnforceAndCostTask> for Task<T> {
     #[inline]
     fn from(task: EnforceAndCostTask) -> Self {
         Task::EnforceAndCost(task)
@@ -90,7 +90,11 @@ impl EnforceAndCostTask {
      * 3. once we get all output property of one candidate loop, derive output property base of current operator
      * 4. if output property does not satisfied require property, add enforcers and submit (Cost, GroupPlan) pair
      */
-    pub(super) fn execute(mut self, task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
+    pub(super) fn execute<T: OptimizerType>(
+        mut self,
+        task_runner: &mut TaskRunner<T>,
+        optimizer_ctx: &mut OptimizerContext<T>,
+    ) {
         // 1. according to current operator create new requestPropList for children
         let reqd_props_list = self.make_child_required_props_list();
         for (index, child_required_props) in reqd_props_list.iter().enumerate().skip(self.prev_index()) {

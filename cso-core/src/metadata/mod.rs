@@ -76,7 +76,7 @@ impl MdCache {
         Self { cache: HashMap::new() }
     }
 
-    pub fn get(&self, key: &Box<dyn MdId>) -> Option<&Box<dyn Metadata>> {
+    pub fn get(&self, key: &dyn MdId) -> Option<&Box<dyn Metadata>> {
         self.cache.get(key)
     }
 

@@ -1,7 +1,8 @@
 use crate::memo::{Group, GroupPlan, GroupPlanRef};
 use crate::operator::Operator;
-use crate::{OptimizerContext, Plan};
+use crate::{OptimizerContext, OptimizerType, Plan};
 use std::any::Any;
+use std::fmt::Debug;
 use std::ops::Deref;
 use std::rc::Rc;
 
@@ -75,13 +76,19 @@ impl Pattern {
     }
 }
 
-pub trait Rule: Any {
-    fn name(&self) -> &str;
-    fn rule_id(&self) -> u16;
-    fn pattern(&self) -> &Pattern;
-    fn transform(&self, input: &Plan, context: &mut OptimizerContext) -> Vec<Plan>;
+pub trait RuleId: Copy + PartialEq + Debug {
+    fn as_usize(self) -> usize;
+}
 
-    fn check(&self, _input: &Plan, _context: &OptimizerContext) -> bool {
+pub trait Rule: Any {
+    type OptimizerType: OptimizerType;
+
+    fn name(&self) -> &str;
+    fn rule_id(&self) -> <Self::OptimizerType as OptimizerType>::RuleId;
+    fn pattern(&self) -> &Pattern;
+    fn transform(&self, input: &Plan, context: &mut OptimizerContext<Self::OptimizerType>) -> Vec<Plan>;
+
+    fn check(&self, _input: &Plan, _context: &OptimizerContext<Self::OptimizerType>) -> bool {
         true
     }
 
@@ -106,39 +113,35 @@ pub trait Rule: Any {
     }
 }
 
-pub type RuleRef = Rc<dyn Rule>;
+pub type RuleRef<T> = Rc<dyn Rule<OptimizerType = T>>;
 
-pub struct RuleSet {
-    transform_rules: Vec<RuleRef>,
-    implement_rules: Vec<RuleRef>,
+pub struct RuleSet<T: OptimizerType> {
+    transform_rules: Vec<RuleRef<T>>,
+    implement_rules: Vec<RuleRef<T>>,
 }
 
-impl RuleSet {
+impl<T: OptimizerType> RuleSet<T> {
     pub fn new() -> Self {
         RuleSet {
             transform_rules: vec![],
-            implement_rules: vec![
-                // Rc::new(ScanImplementation::new()),
-                // Rc::new(FilterImplementation::new()),
-                // Rc::new(ProjectImplementation::new()),
-            ],
+            implement_rules: vec![],
         }
     }
 
-    pub fn transform_rules(&self) -> &[RuleRef] {
+    pub fn transform_rules(&self) -> &[RuleRef<T>] {
         &self.transform_rules
     }
 
-    pub fn implement_rules(&self) -> &[RuleRef] {
+    pub fn implement_rules(&self) -> &[RuleRef<T>] {
         &self.implement_rules
     }
 
-    pub fn set_transform_rules(&mut self, rules: Vec<RuleRef>) {
+    pub fn set_transform_rules(&mut self, rules: Vec<RuleRef<T>>) {
         assert!(rules.iter().all(|x| { x.is_transformation() }));
         self.transform_rules = rules;
     }
 
-    pub fn set_implement_rules(&mut self, rules: Vec<RuleRef>) {
+    pub fn set_implement_rules(&mut self, rules: Vec<RuleRef<T>>) {
         assert!(rules.iter().all(|x| { x.is_implementation() }));
         self.transform_rules = rules;
     }

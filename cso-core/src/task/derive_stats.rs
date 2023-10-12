@@ -1,12 +1,12 @@
 use crate::memo::GroupPlanRef;
 use crate::task::{Task, TaskRunner};
-use crate::OptimizerContext;
+use crate::{OptimizerContext, OptimizerType};
 
 pub struct DeriveStatsTask {
     plan: GroupPlanRef,
 }
 
-impl From<DeriveStatsTask> for Task {
+impl<T: OptimizerType> From<DeriveStatsTask> for Task<T> {
     #[inline]
     fn from(task: DeriveStatsTask) -> Self {
         Task::DeriveStats(task)
@@ -18,7 +18,11 @@ impl DeriveStatsTask {
         DeriveStatsTask { plan }
     }
 
-    pub(super) fn execute(self, _task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
+    pub(super) fn execute<T: OptimizerType>(
+        self,
+        _task_runner: &mut TaskRunner<T>,
+        optimizer_ctx: &mut OptimizerContext<T>,
+    ) {
         let mut plan = self.plan.borrow_mut();
 
         if plan.is_stats_derived() {

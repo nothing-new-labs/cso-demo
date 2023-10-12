@@ -18,9 +18,14 @@ use crate::memo::{GroupPlanRef, Memo};
 use crate::metadata::MdAccessor;
 use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::property::{LogicalProperties, PhysicalProperties};
-use crate::rule::RuleSet;
+use crate::rule::{RuleId, RuleSet};
 use crate::task::{OptimizeGroupTask, TaskRunner};
+use std::marker::PhantomData;
 use std::rc::Rc;
+
+pub trait OptimizerType: 'static {
+    type RuleId: RuleId;
+}
 
 pub struct LogicalPlan {
     op: Rc<dyn LogicalOperator>,
@@ -109,13 +114,17 @@ impl Plan {
 #[derive(Default)]
 pub struct Options {}
 
-pub struct Optimizer {
+pub struct Optimizer<T: OptimizerType> {
     _options: Options,
+    _mark: PhantomData<T>,
 }
 
-impl Optimizer {
-    pub fn new(_options: Options) -> Optimizer {
-        Optimizer { _options }
+impl<T: OptimizerType> Optimizer<T> {
+    pub fn new(_options: Options) -> Optimizer<T> {
+        Optimizer {
+            _options,
+            _mark: PhantomData,
+        }
     }
 
     pub fn optimize(
@@ -123,7 +132,7 @@ impl Optimizer {
         plan: LogicalPlan,
         required_properties: Rc<PhysicalProperties>,
         md_accessor: MdAccessor,
-        rule_set: RuleSet,
+        rule_set: RuleSet<T>,
     ) -> PhysicalPlan {
         let mut optimizer_ctx = OptimizerContext::new(md_accessor, required_properties.clone(), rule_set);
         optimizer_ctx.memo_mut().init(plan);
@@ -136,15 +145,15 @@ impl Optimizer {
     }
 }
 
-pub struct OptimizerContext {
+pub struct OptimizerContext<T: OptimizerType> {
     memo: Memo,
-    rule_set: RuleSet,
+    rule_set: RuleSet<T>,
     md_accessor: MdAccessor,
     required_properties: Rc<PhysicalProperties>,
 }
 
-impl OptimizerContext {
-    fn new(md_accessor: MdAccessor, required_properties: Rc<PhysicalProperties>, rule_set: RuleSet) -> Self {
+impl<T: OptimizerType> OptimizerContext<T> {
+    fn new(md_accessor: MdAccessor, required_properties: Rc<PhysicalProperties>, rule_set: RuleSet<T>) -> Self {
         OptimizerContext {
             memo: Memo::new(),
             md_accessor,
@@ -161,11 +170,11 @@ impl OptimizerContext {
         &self.memo
     }
 
-    pub fn rule_set_mut(&mut self) -> &mut RuleSet {
+    pub fn rule_set_mut(&mut self) -> &mut RuleSet<T> {
         &mut self.rule_set
     }
 
-    pub fn rule_set(&self) -> &RuleSet {
+    pub fn rule_set(&self) -> &RuleSet<T> {
         &self.rule_set
     }
 

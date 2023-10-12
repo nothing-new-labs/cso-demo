@@ -1,5 +1,7 @@
 use crate::operator::logical_scan::LogicalScan;
 use crate::operator::physical_scan::PhysicalScan;
+use crate::rule::RuleId;
+use crate::Demo;
 use cso_core::operator::Operator;
 use cso_core::rule::{Pattern, PatternType, Rule};
 use cso_core::{OptimizerContext, Plan};
@@ -18,19 +20,21 @@ impl ScanImplementation {
 }
 
 impl Rule for ScanImplementation {
+    type OptimizerType = Demo;
+
     fn name(&self) -> &str {
         "scan implementation"
     }
 
-    fn rule_id(&self) -> u16 {
-        1
+    fn rule_id(&self) -> RuleId {
+        RuleId::ScanImplementation
     }
 
     fn pattern(&self) -> &Pattern {
         &self.pattern
     }
 
-    fn transform(&self, input: &Plan, _context: &mut OptimizerContext) -> Vec<Plan> {
+    fn transform(&self, input: &Plan, _context: &mut OptimizerContext<Demo>) -> Vec<Plan> {
         let logical_scan = input.operator().logical_op().downcast_ref::<LogicalScan>().unwrap();
         let physical_scan = PhysicalScan::new(
             logical_scan.table_desc().clone(),
