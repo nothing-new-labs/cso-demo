@@ -15,7 +15,7 @@ pub mod rule;
 mod task;
 
 use crate::memo::{GroupPlanRef, Memo};
-use crate::metadata::accessor::MdAccessor;
+use crate::metadata::MdAccessor;
 use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::RuleSet;

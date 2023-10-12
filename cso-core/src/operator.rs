@@ -1,7 +1,7 @@
 use crate::any::AsAny;
 use crate::cost::Cost;
-use crate::metadata::accessor::MdAccessor;
-use crate::metadata::statistics::Stats;
+use crate::metadata::MdAccessor;
+use crate::metadata::Stats;
 use crate::property::PhysicalProperties;
 use dyn_clonable::clonable;
 use std::fmt::Debug;

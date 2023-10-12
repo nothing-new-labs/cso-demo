@@ -1,8 +1,8 @@
 use crate::expression::ColumnVar;
 use crate::statistics::{RelationMetadata, RelationStats, Statistics};
-use cso_core::metadata::accessor::MdAccessor;
-use cso_core::metadata::statistics::Stats;
+use cso_core::metadata::MdAccessor;
 use cso_core::metadata::MdId;
+use cso_core::metadata::Stats;
 use cso_core::operator::LogicalOperator;
 use std::rc::Rc;
 

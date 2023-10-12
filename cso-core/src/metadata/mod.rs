@@ -1,6 +1,10 @@
-pub mod accessor;
-pub mod provider;
-pub mod statistics;
+mod accessor;
+mod provider;
+mod statistics;
+
+pub use self::accessor::MdAccessor;
+pub use self::provider::{CachedMdProvider, MdProvider};
+pub use self::statistics::{Statistics, Stats};
 
 use crate::any::AsAny;
 use dyn_clonable::clonable;

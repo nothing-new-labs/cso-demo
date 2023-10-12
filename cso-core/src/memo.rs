@@ -1,5 +1,5 @@
 use crate::cost::Cost;
-use crate::metadata::statistics::Stats;
+use crate::metadata::Stats;
 use crate::operator::Operator;
 use crate::property::PhysicalProperties;
 use crate::rule::Rule;

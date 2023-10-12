@@ -1,6 +1,6 @@
 use cso_core::expression::ScalarExpression;
-use cso_core::metadata::accessor::MdAccessor;
-use cso_core::metadata::provider::CachedMdProvider;
+use cso_core::metadata::CachedMdProvider;
+use cso_core::metadata::MdAccessor;
 use cso_core::metadata::{MdCache, MdId, Metadata};
 use cso_core::property::PhysicalProperties;
 use cso_core::{LogicalPlan, Optimizer, Options, PhysicalPlan};
