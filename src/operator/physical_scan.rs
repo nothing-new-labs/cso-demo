@@ -1,7 +1,7 @@
 use crate::expression::ColumnVar;
 use crate::operator::logical_scan::TableDesc;
-use crate::operator::PhysicalOperator;
-use crate::property::PhysicalProperties;
+use cso_core::operator::PhysicalOperator;
+use cso_core::property::PhysicalProperties;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]

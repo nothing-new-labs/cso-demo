@@ -1,7 +1,7 @@
-use crate::memo::{GroupPlan, GroupRef};
 use crate::operator::physical_sort::{OrderSpec, PhysicalSort};
-use crate::operator::Operator;
-use crate::property::{PhysicalProperty, Property};
+use cso_core::memo::{GroupPlan, GroupRef};
+use cso_core::operator::Operator;
+use cso_core::property::{PhysicalProperty, Property};
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 

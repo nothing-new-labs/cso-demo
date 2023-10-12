@@ -2,6 +2,8 @@ use cso_core::expression::ScalarExpression;
 use cso_core::metadata::accessor::MdAccessor;
 use cso_core::metadata::provider::CachedMdProvider;
 use cso_core::metadata::{MdCache, MdId, Metadata};
+use cso_core::property::PhysicalProperties;
+use cso_core::{LogicalPlan, Optimizer, Options, PhysicalPlan};
 use cso_demo::datum::Datum;
 use cso_demo::expression::{ColumnVar, IsNull};
 use cso_demo::operator::logical_filter::LogicalFilter;
@@ -12,9 +14,8 @@ use cso_demo::operator::physical_project::PhysicalProject;
 use cso_demo::operator::physical_scan::PhysicalScan;
 use cso_demo::operator::physical_sort::{OrderSpec, Ordering, PhysicalSort};
 use cso_demo::property::sort_property::SortProperty;
-use cso_demo::property::PhysicalProperties;
+use cso_demo::rule::create_rule_set;
 use cso_demo::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};
-use cso_demo::{LogicalPlan, Optimizer, Options, PhysicalPlan};
 use std::rc::Rc;
 
 fn logical_scan() -> LogicalPlan {
@@ -131,6 +132,7 @@ fn expected_physical_plan() -> PhysicalPlan {
 #[test]
 fn test_sort_project_filter_scan() {
     let mut optimizer = Optimizer::new(Options::default());
+    let rule_set = create_rule_set();
 
     let scan = logical_scan();
     let filter = logical_filter(vec![scan]);
@@ -138,6 +140,6 @@ fn test_sort_project_filter_scan() {
     let required_properties = required_properties();
     let md_accessor = metadata_accessor();
 
-    let physical_plan = optimizer.optimize(project, required_properties, md_accessor);
+    let physical_plan = optimizer.optimize(project, required_properties, md_accessor, rule_set);
     assert_eq!(physical_plan, expected_physical_plan());
 }

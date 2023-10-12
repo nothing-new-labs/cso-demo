@@ -1,8 +1,8 @@
 use crate::operator::logical_filter::LogicalFilter;
 use crate::operator::physical_filter::PhysicalFilter;
-use crate::operator::Operator;
-use crate::rule::{Pattern, PatternType, Rule};
-use crate::{OptimizerContext, Plan};
+use cso_core::operator::Operator;
+use cso_core::rule::{Pattern, PatternType, Rule};
+use cso_core::{OptimizerContext, Plan};
 use std::rc::Rc;
 
 pub struct FilterImplementation {
@@ -36,7 +36,11 @@ impl Rule for FilterImplementation {
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_filter)),
             input.inputs().to_vec(),
-            input.group_plan.clone(),
+            input.group_plan().cloned(),
         )]
+    }
+
+    fn is_implementation(&self) -> bool {
+        true
     }
 }

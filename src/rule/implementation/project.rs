@@ -1,8 +1,8 @@
 use crate::operator::logical_project::LogicalProject;
 use crate::operator::physical_project::PhysicalProject;
-use crate::operator::Operator;
-use crate::rule::{Pattern, PatternType, Rule};
-use crate::{OptimizerContext, Plan};
+use cso_core::operator::Operator;
+use cso_core::rule::{Pattern, PatternType, Rule};
+use cso_core::{OptimizerContext, Plan};
 use std::rc::Rc;
 use std::vec;
 
@@ -37,7 +37,11 @@ impl Rule for ProjectImplementation {
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_project)),
             input.inputs().to_vec(),
-            input.group_plan.clone(),
+            input.group_plan().clone().cloned(),
         )]
+    }
+
+    fn is_implementation(&self) -> bool {
+        true
     }
 }

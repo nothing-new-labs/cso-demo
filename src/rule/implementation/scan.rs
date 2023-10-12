@@ -1,8 +1,8 @@
 use crate::operator::logical_scan::LogicalScan;
 use crate::operator::physical_scan::PhysicalScan;
-use crate::operator::Operator;
-use crate::rule::{Pattern, PatternType, Rule};
-use crate::{OptimizerContext, Plan};
+use cso_core::operator::Operator;
+use cso_core::rule::{Pattern, PatternType, Rule};
+use cso_core::{OptimizerContext, Plan};
 use std::rc::Rc;
 
 pub struct ScanImplementation {
@@ -39,7 +39,11 @@ impl Rule for ScanImplementation {
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_scan)),
             vec![],
-            input.group_plan.clone(),
+            input.group_plan().clone().cloned(),
         )]
+    }
+
+    fn is_implementation(&self) -> bool {
+        true
     }
 }
