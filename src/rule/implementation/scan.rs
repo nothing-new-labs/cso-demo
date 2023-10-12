@@ -39,7 +39,7 @@ impl Rule for ScanImplementation {
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_scan)),
             vec![],
-            input.group_plan().clone().cloned(),
+            input.group_plan().cloned(),
         )]
     }
 

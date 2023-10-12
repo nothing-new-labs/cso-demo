@@ -37,7 +37,7 @@ impl Rule for ProjectImplementation {
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_project)),
             input.inputs().to_vec(),
-            input.group_plan().clone().cloned(),
+            input.group_plan().cloned(),
         )]
     }
 
