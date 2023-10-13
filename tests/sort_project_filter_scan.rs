@@ -3,7 +3,7 @@ use cso_demo::expression::ScalarExpression;
 use cso_demo::expression::{ColumnVar, IsNull};
 use cso_demo::metadata::CachedMdProvider;
 use cso_demo::metadata::MdAccessor;
-use cso_demo::metadata::{MdCache, MdId, Metadata};
+use cso_demo::metadata::{MdCache, Metadata};
 use cso_demo::operator::logical_filter::LogicalFilter;
 use cso_demo::operator::logical_project::LogicalProject;
 use cso_demo::operator::logical_scan::{LogicalScan, TableDesc};
@@ -19,7 +19,7 @@ use cso_demo::{LogicalPlan, Optimizer, Options, PhysicalPlan};
 use std::rc::Rc;
 
 fn logical_scan() -> LogicalPlan {
-    let mdid = Box::new(2u64) as Box<dyn MdId>;
+    let mdid = 2;
     let table_desc = TableDesc::new(mdid);
     let output_columns = vec![ColumnVar::new(0), ColumnVar::new(1), ColumnVar::new(2)];
 
@@ -56,12 +56,12 @@ fn required_properties() -> Rc<PhysicalProperties> {
 
 fn md_cache() -> MdCache {
     // mdids
-    let relation_stats_id = Box::new(1u64) as Box<dyn MdId>;
-    let relation_md_id = Box::new(2u64) as Box<dyn MdId>;
-    let column_stats_id = Box::new(3u64) as Box<dyn MdId>;
+    let relation_stats_id = 1;
+    let relation_md_id = 2;
+    let column_stats_id = 3;
 
     // relation stats
-    let relation_stats = RelationStats::new("x".to_string(), 9011, false, vec![column_stats_id.clone()]);
+    let relation_stats = RelationStats::new("x".to_string(), 9011, false, vec![column_stats_id]);
     let boxed_relation_stats = Box::new(relation_stats.clone()) as Box<dyn Metadata>;
 
     // relation metadata
@@ -73,7 +73,7 @@ fn md_cache() -> MdCache {
         ColumnMetadata::new("cmin".to_string(), 5, false, 4, Datum::I32(0)),
         ColumnMetadata::new("xmax".to_string(), 6, false, 4, Datum::I32(0)),
     ];
-    let relation_md = RelationMetadata::new("x".to_string(), column_md, relation_stats_id.clone());
+    let relation_md = RelationMetadata::new("x".to_string(), column_md, relation_stats_id);
     let boxed_relation_md = Box::new(relation_md.clone()) as Box<dyn Metadata>;
 
     // column stats
@@ -87,9 +87,9 @@ fn md_cache() -> MdCache {
 
     // metadata cache
     let mut md_cache = MdCache::new();
-    md_cache.insert(relation_stats_id.clone(), boxed_relation_stats);
-    md_cache.insert(relation_md_id.clone(), boxed_relation_md);
-    md_cache.insert(column_stats_id.clone(), boxed_column_stats);
+    md_cache.insert(relation_stats_id, boxed_relation_stats);
+    md_cache.insert(relation_md_id, boxed_relation_md);
+    md_cache.insert(column_stats_id, boxed_column_stats);
 
     md_cache
 }
@@ -101,7 +101,7 @@ fn metadata_accessor() -> MdAccessor {
 }
 
 fn expected_physical_plan() -> PhysicalPlan {
-    let mdid = Box::new(2u64) as Box<dyn MdId>;
+    let mdid = 2;
     let table_desc = TableDesc::new(mdid);
     let output_columns = vec![ColumnVar::new(0), ColumnVar::new(1), ColumnVar::new(2)];
     let scan = PhysicalScan::new(table_desc, output_columns);

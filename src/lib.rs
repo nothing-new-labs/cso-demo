@@ -21,11 +21,16 @@ pub struct Demo;
 impl OptimizerType for Demo {
     type RuleId = RuleId;
     type OperatorId = OperatorId;
+    type MdId = u64;
 }
 
 pub use cso_core::Options;
 
 pub mod metadata {
+    use crate::Demo;
+
+    pub type MdAccessor = cso_core::metadata::MdAccessor<Demo>;
+    pub type MdCache = cso_core::metadata::MdCache<Demo>;
     pub use cso_core::metadata::*;
 }
 

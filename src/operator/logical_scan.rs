@@ -1,31 +1,24 @@
 use crate::expression::ColumnVar;
+use crate::metadata::MdAccessor;
 use crate::operator::OperatorId;
 use crate::statistics::{RelationMetadata, RelationStats, Statistics};
 use crate::Demo;
-use cso_core::metadata::MdAccessor;
-use cso_core::metadata::MdId;
 use cso_core::metadata::Stats;
 use cso_core::operator::LogicalOperator;
 use std::rc::Rc;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TableDesc {
-    md_id: Box<dyn MdId>,
+    md_id: u64,
 }
 
 impl TableDesc {
-    pub const fn new(md_id: Box<dyn MdId>) -> Self {
+    pub const fn new(md_id: u64) -> Self {
         Self { md_id }
     }
 
-    fn md_id(&self) -> &Box<dyn MdId> {
-        &self.md_id
-    }
-}
-
-impl PartialEq for TableDesc {
-    fn eq(&self, other: &Self) -> bool {
-        self.md_id.equal(other.md_id().as_ref())
+    fn md_id(&self) -> u64 {
+        self.md_id
     }
 }
 
@@ -55,14 +48,16 @@ impl LogicalScan {
         debug_assert!(input_stats.is_empty());
 
         let relation_md_id = self.table_desc.md_id();
-        let rel_md = md_accessor.retrieve_metadata(relation_md_id).expect("Missing metadata");
+        let rel_md = md_accessor
+            .retrieve_metadata(&relation_md_id)
+            .expect("Missing metadata");
         let rel_md = rel_md
             .downcast_ref::<RelationMetadata>()
             .expect("RelationMetadata expected");
 
         let rel_stats_md_id = rel_md.rel_stats_mdid();
         let rel_stats = md_accessor
-            .retrieve_metadata(rel_stats_md_id)
+            .retrieve_metadata(&rel_stats_md_id)
             .expect("Missing metadata");
         let rel_stats = rel_stats
             .downcast_ref::<RelationStats>()

@@ -1,7 +1,7 @@
 use crate::datum::Datum;
 use cso_core::any::AsAny;
+use cso_core::metadata::Metadata;
 use cso_core::metadata::Stats;
-use cso_core::metadata::{MdId, Metadata};
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -157,11 +157,11 @@ pub struct RelationStats {
     name: String,
     rows: u64,
     empty: bool,
-    col_stat_mdids: Vec<Box<dyn MdId>>,
+    col_stat_mdids: Vec<u64>,
 }
 
 impl RelationStats {
-    pub const fn new(name: String, rows: u64, empty: bool, col_stat_mdids: Vec<Box<dyn MdId>>) -> Self {
+    pub const fn new(name: String, rows: u64, empty: bool, col_stat_mdids: Vec<u64>) -> Self {
         Self {
             name,
             rows,
@@ -182,7 +182,7 @@ impl RelationStats {
         self.empty
     }
 
-    pub fn col_stat_mdids(&self) -> &[Box<dyn MdId>] {
+    pub fn col_stat_mdids(&self) -> &[u64] {
         &self.col_stat_mdids
     }
 }
@@ -235,12 +235,12 @@ impl ColumnMetadata {
 pub struct RelationMetadata {
     name: String,
     column_metadata: Vec<ColumnMetadata>,
-    rel_stats_mdid: Box<dyn MdId>,
+    rel_stats_mdid: u64,
 }
 
 impl RelationMetadata {
     #[allow(clippy::too_many_arguments)]
-    pub const fn new(name: String, column_metadata: Vec<ColumnMetadata>, rel_stats_mdid: Box<dyn MdId>) -> Self {
+    pub const fn new(name: String, column_metadata: Vec<ColumnMetadata>, rel_stats_mdid: u64) -> Self {
         Self {
             name,
             column_metadata,
@@ -256,8 +256,8 @@ impl RelationMetadata {
         &self.column_metadata
     }
 
-    pub fn rel_stats_mdid(&self) -> &Box<dyn MdId> {
-        &self.rel_stats_mdid
+    pub fn rel_stats_mdid(&self) -> u64 {
+        self.rel_stats_mdid
     }
 }
 

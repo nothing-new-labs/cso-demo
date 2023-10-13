@@ -1,21 +1,21 @@
 use cso_demo::datum::Datum;
-use cso_demo::metadata::{MdCache, MdId, Metadata};
+use cso_demo::metadata::{MdCache, Metadata};
 use cso_demo::statistics::{Bucket, ColumnMetadata, ColumnStats, Histogram, RelationMetadata, RelationStats};
 
 #[test]
 fn test_serialize_md_cache() {
     // mdids
-    let relation_stats_id = Box::new(1u64) as Box<dyn MdId>;
-    let relation_md_id = Box::new(2u64) as Box<dyn MdId>;
-    let column_stats_id = Box::new(3u64) as Box<dyn MdId>;
+    let relation_stats_id = 1;
+    let relation_md_id = 2;
+    let column_stats_id = 3;
 
     let json = serde_json::to_string(&relation_stats_id).unwrap();
-    let new_relation_stats_id: Box<dyn MdId> = serde_json::from_str(json.as_str()).unwrap();
+    let new_relation_stats_id: u64 = serde_json::from_str(json.as_str()).unwrap();
     debug_assert_eq!(relation_stats_id.to_string(), new_relation_stats_id.to_string());
     debug_assert_eq!("1", new_relation_stats_id.to_string());
 
     // relation stats
-    let relation_stats = RelationStats::new("x".to_string(), 9011, false, vec![column_stats_id.clone()]);
+    let relation_stats = RelationStats::new("x".to_string(), 9011, false, vec![column_stats_id]);
     let boxed_relation_stats = Box::new(relation_stats.clone()) as Box<dyn Metadata>;
     let json = serde_json::to_string(&boxed_relation_stats).unwrap();
     let new_relation_stats: Box<dyn Metadata> = serde_json::from_str(json.as_str()).unwrap();
@@ -29,7 +29,7 @@ fn test_serialize_md_cache() {
         ColumnMetadata::new("cmin".to_string(), 5, false, 4, Datum::I32(0)),
         ColumnMetadata::new("xmax".to_string(), 6, false, 4, Datum::I32(0)),
     ];
-    let relation_md = RelationMetadata::new("x".to_string(), column_md, relation_stats_id.clone());
+    let relation_md = RelationMetadata::new("x".to_string(), column_md, relation_stats_id);
     let boxed_relation_md = Box::new(relation_md.clone()) as Box<dyn Metadata>;
     let json = serde_json::to_string(&boxed_relation_md).unwrap();
     let new_relation_md: Box<dyn Metadata> = serde_json::from_str(json.as_str()).unwrap();
@@ -47,28 +47,28 @@ fn test_serialize_md_cache() {
 
     // metadata cache
     let mut md_cache = MdCache::new();
-    md_cache.insert(relation_stats_id.clone(), new_relation_stats);
-    md_cache.insert(relation_md_id.clone(), new_relation_md);
-    md_cache.insert(column_stats_id.clone(), new_column_stats);
+    md_cache.insert(relation_stats_id, new_relation_stats);
+    md_cache.insert(relation_md_id, new_relation_md);
+    md_cache.insert(column_stats_id, new_column_stats);
 
     let md_string = serde_json::to_string_pretty(&md_cache).unwrap();
     println!("{md_string}");
 
     let new_md_cache: MdCache = serde_json::from_str(md_string.as_str()).unwrap();
 
-    let new_relation_stats = new_md_cache.get(&*relation_stats_id).unwrap();
+    let new_relation_stats = new_md_cache.get(&relation_stats_id).unwrap();
     let new_relation_stats = new_relation_stats
         .downcast_ref::<RelationStats>()
         .expect("RelationStats expected");
     debug_assert_eq!(new_relation_stats.rows(), relation_stats.rows());
 
-    let new_relation_md = new_md_cache.get(relation_md_id.as_ref()).unwrap();
+    let new_relation_md = new_md_cache.get(&relation_md_id).unwrap();
     let new_relation_md = new_relation_md
         .downcast_ref::<RelationMetadata>()
         .expect("RelationMetadata expected");
     debug_assert_eq!(new_relation_md.name(), relation_md.name());
 
-    let new_column_stats = new_md_cache.get(column_stats_id.as_ref()).unwrap();
+    let new_column_stats = new_md_cache.get(&column_stats_id).unwrap();
     let new_column_stats = new_column_stats
         .downcast_ref::<ColumnStats>()
         .expect("ColumnStats expected");

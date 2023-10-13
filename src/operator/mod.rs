@@ -23,5 +23,3 @@ pub enum OperatorId {
     PhysicalProject,
     PhysicalSort,
 }
-
-impl cso_core::operator::OperatorId for OperatorId {}

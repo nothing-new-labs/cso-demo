@@ -16,17 +16,20 @@ mod task;
 
 use crate::memo::{GroupPlanRef, Memo};
 use crate::metadata::MdAccessor;
-use crate::operator::{LogicalOperator, Operator, OperatorId, PhysicalOperator};
+use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::{RuleId, RuleSet};
 use crate::task::{OptimizeGroupTask, TaskRunner};
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
 pub trait OptimizerType: 'static + PartialEq + Eq + Hash + Clone {
     type RuleId: RuleId;
-    type OperatorId: OperatorId;
+    type OperatorId: PartialEq + Debug;
+    type MdId: PartialEq + Eq + Clone + Hash + Debug + Serialize + for<'a> Deserialize<'a>;
 }
 
 pub struct LogicalPlan<T: OptimizerType> {
@@ -133,7 +136,7 @@ impl<T: OptimizerType> Optimizer<T> {
         &mut self,
         plan: LogicalPlan<T>,
         required_properties: Rc<PhysicalProperties<T>>,
-        md_accessor: MdAccessor,
+        md_accessor: MdAccessor<T>,
         rule_set: RuleSet<T>,
     ) -> PhysicalPlan<T> {
         let mut optimizer_ctx = OptimizerContext::new(md_accessor, required_properties.clone(), rule_set);
@@ -150,12 +153,12 @@ impl<T: OptimizerType> Optimizer<T> {
 pub struct OptimizerContext<T: OptimizerType> {
     memo: Memo<T>,
     rule_set: RuleSet<T>,
-    md_accessor: MdAccessor,
+    md_accessor: MdAccessor<T>,
     required_properties: Rc<PhysicalProperties<T>>,
 }
 
 impl<T: OptimizerType> OptimizerContext<T> {
-    fn new(md_accessor: MdAccessor, required_properties: Rc<PhysicalProperties<T>>, rule_set: RuleSet<T>) -> Self {
+    fn new(md_accessor: MdAccessor<T>, required_properties: Rc<PhysicalProperties<T>>, rule_set: RuleSet<T>) -> Self {
         OptimizerContext {
             memo: Memo::new(),
             md_accessor,
@@ -180,7 +183,7 @@ impl<T: OptimizerType> OptimizerContext<T> {
         &self.rule_set
     }
 
-    pub fn md_accessor(&self) -> &MdAccessor {
+    pub fn md_accessor(&self) -> &MdAccessor<T> {
         &self.md_accessor
     }
 

@@ -7,12 +7,12 @@ pub use self::provider::{CachedMdProvider, MdProvider};
 pub use self::statistics::{Statistics, Stats};
 
 use crate::any::AsAny;
+use crate::OptimizerType;
 use dyn_clonable::clonable;
 use serde::{Deserialize, Serialize};
 use serde_json_any_key::any_key_map;
 use std::collections::HashMap;
-use std::fmt::{Debug, Display};
-use std::hash::{Hash, Hasher};
+use std::fmt::Debug;
 
 #[typetag::serde(tag = "type")]
 #[clonable]
@@ -25,62 +25,22 @@ impl dyn Metadata {
     }
 }
 
-#[typetag::serde(tag = "type")]
-#[clonable]
-pub trait MdId: AsAny + Clone + Display + Debug {
-    fn equal(&self, other: &dyn MdId) -> bool;
-    fn hash(&self);
-}
-
-impl PartialEq<Self> for dyn MdId {
-    fn eq(&self, other: &Self) -> bool {
-        self.equal(other)
-    }
-}
-
-impl Hash for dyn MdId {
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        self.hash()
-    }
-}
-
-impl Eq for dyn MdId {}
-
-impl dyn MdId {
-    #[inline]
-    pub fn downcast_ref<T: MdId>(&self) -> Option<&T> {
-        self.as_any().downcast_ref::<T>()
-    }
-}
-
-#[typetag::serde]
-impl MdId for u64 {
-    fn equal(&self, other: &dyn MdId) -> bool {
-        match other.downcast_ref::<u64>() {
-            Some(other) => self.eq(other),
-            None => false,
-        }
-    }
-
-    fn hash(&self) {}
-}
-
 #[derive(Serialize, Deserialize)]
-pub struct MdCache {
+pub struct MdCache<T: OptimizerType> {
     #[serde(with = "any_key_map")]
-    cache: HashMap<Box<dyn MdId>, Box<dyn Metadata>>,
+    cache: HashMap<T::MdId, Box<dyn Metadata>>,
 }
 
-impl MdCache {
+impl<T: OptimizerType> MdCache<T> {
     pub fn new() -> Self {
         Self { cache: HashMap::new() }
     }
 
-    pub fn get(&self, key: &dyn MdId) -> Option<&Box<dyn Metadata>> {
+    pub fn get(&self, key: &T::MdId) -> Option<&Box<dyn Metadata>> {
         self.cache.get(key)
     }
 
-    pub fn insert(&mut self, key: Box<dyn MdId>, val: Box<dyn Metadata>) -> Option<Box<dyn Metadata>> {
+    pub fn insert(&mut self, key: T::MdId, val: Box<dyn Metadata>) -> Option<Box<dyn Metadata>> {
         self.cache.insert(key, val)
     }
 }

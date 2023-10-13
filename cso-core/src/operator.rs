@@ -7,14 +7,16 @@ use crate::OptimizerType;
 use std::fmt::Debug;
 use std::rc::Rc;
 
-pub trait OperatorId: PartialEq + Debug {}
-
 pub trait LogicalOperator: AsAny + Debug {
     type OptimizerType: OptimizerType;
 
     fn name(&self) -> &str;
     fn operator_id(&self) -> &<Self::OptimizerType as OptimizerType>::OperatorId;
-    fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats>;
+    fn derive_statistics(
+        &self,
+        _md_accessor: &MdAccessor<Self::OptimizerType>,
+        input_stats: &[Rc<dyn Stats>],
+    ) -> Rc<dyn Stats>;
 }
 
 impl<O: OptimizerType> dyn LogicalOperator<OptimizerType = O> {
