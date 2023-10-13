@@ -31,7 +31,11 @@ pub mod metadata {
 
     pub type MdAccessor = cso_core::metadata::MdAccessor<Demo>;
     pub type MdCache = cso_core::metadata::MdCache<Demo>;
-    pub use cso_core::metadata::*;
+    pub type MdProvider = dyn cso_core::metadata::MdProvider<OptimizerType = Demo>;
+    pub type CachedMdProvider = cso_core::metadata::CachedMdProvider<Demo>;
+    pub use cso_core::metadata::Metadata;
+    pub use cso_core::metadata::Statistics;
+    pub use cso_core::metadata::Stats;
 }
 
 pub(crate) type GroupPlan = cso_core::memo::GroupPlan<Demo>;
