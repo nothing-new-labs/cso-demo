@@ -1,3 +1,5 @@
+use crate::operator::OperatorId;
+use crate::Demo;
 use cso_core::expression::ScalarExpression;
 use cso_core::metadata::MdAccessor;
 use cso_core::metadata::Stats;
@@ -20,12 +22,14 @@ impl LogicalProject {
 }
 
 impl LogicalOperator for LogicalProject {
+    type OptimizerType = Demo;
+
     fn name(&self) -> &str {
         "logical project"
     }
 
-    fn operator_id(&self) -> i16 {
-        3
+    fn operator_id(&self) -> &OperatorId {
+        &OperatorId::LogicalProject
     }
 
     fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {

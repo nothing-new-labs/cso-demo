@@ -1,6 +1,6 @@
 use crate::any::AsAny;
 use crate::memo::{GroupPlan, GroupRef};
-use dyn_clonable::clonable;
+use crate::OptimizerType;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
@@ -9,32 +9,40 @@ pub trait Property {}
 
 pub trait LogicalProperty: Property {}
 
-#[clonable]
-pub trait PhysicalProperty: Property + AsAny + Clone + Debug {
+pub trait PhysicalProperty: Property + AsAny + Debug {
+    type OptimizerType: OptimizerType;
+
+    fn clone(&self) -> Box<dyn PhysicalProperty<OptimizerType = Self::OptimizerType>>;
     fn hash(&self, hasher: &mut dyn Hasher);
-    fn equal(&self, other: &dyn PhysicalProperty) -> bool;
-    fn satisfy(&self, other: &dyn PhysicalProperty) -> bool;
-    fn make_enforcer(&self, inputs: GroupRef) -> GroupPlan;
+    fn equal(&self, other: &dyn PhysicalProperty<OptimizerType = Self::OptimizerType>) -> bool;
+    fn satisfy(&self, other: &dyn PhysicalProperty<OptimizerType = Self::OptimizerType>) -> bool;
+    fn make_enforcer(&self, inputs: GroupRef<Self::OptimizerType>) -> GroupPlan<Self::OptimizerType>;
 }
 
-impl dyn PhysicalProperty {
+impl<T: OptimizerType> dyn PhysicalProperty<OptimizerType = T> {
     #[inline]
-    pub fn downcast_ref<T: PhysicalProperty>(&self) -> Option<&T> {
-        self.as_any().downcast_ref::<T>()
+    pub fn downcast_ref<P: PhysicalProperty>(&self) -> Option<&P> {
+        self.as_any().downcast_ref::<P>()
     }
 }
 
-impl PartialEq<Self> for dyn PhysicalProperty {
+impl<T: OptimizerType> PartialEq<Self> for dyn PhysicalProperty<OptimizerType = T> {
     fn eq(&self, other: &Self) -> bool {
         self.equal(other)
     }
 }
 
-impl Eq for dyn PhysicalProperty {}
+impl<T: OptimizerType> Eq for dyn PhysicalProperty<OptimizerType = T> {}
 
-impl Hash for dyn PhysicalProperty {
+impl<T: OptimizerType> Hash for dyn PhysicalProperty<OptimizerType = T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.hash(state)
+    }
+}
+
+impl<T: OptimizerType> Clone for Box<dyn PhysicalProperty<OptimizerType = T>> {
+    fn clone(&self) -> Self {
+        PhysicalProperty::clone(self.as_ref())
     }
 }
 
@@ -42,22 +50,22 @@ impl Hash for dyn PhysicalProperty {
 pub struct LogicalProperties {}
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
-pub struct PhysicalProperties {
-    properties: Vec<Box<dyn PhysicalProperty>>,
+pub struct PhysicalProperties<T: OptimizerType> {
+    properties: Vec<Box<dyn PhysicalProperty<OptimizerType = T>>>,
 }
 
-impl PhysicalProperties {
-    pub const fn new() -> PhysicalProperties {
+impl<T: OptimizerType> PhysicalProperties<T> {
+    pub const fn new() -> PhysicalProperties<T> {
         PhysicalProperties { properties: Vec::new() }
     }
 
-    pub fn with_property(property: Box<dyn PhysicalProperty>) -> Rc<PhysicalProperties> {
+    pub fn with_property(property: Box<dyn PhysicalProperty<OptimizerType = T>>) -> Rc<PhysicalProperties<T>> {
         Rc::new(PhysicalProperties {
             properties: vec![property],
         })
     }
 
-    pub fn satisfy(&self, required_prop: &PhysicalProperties) -> bool {
+    pub fn satisfy(&self, required_prop: &PhysicalProperties<T>) -> bool {
         // all output properties should be super set of required one
 
         // TODO: multiple properties
@@ -70,7 +78,7 @@ impl PhysicalProperties {
     }
 
     // TODO: multiple properties
-    pub fn make_enforcer(&self, group: GroupRef) -> GroupPlan {
+    pub fn make_enforcer(&self, group: GroupRef<T>) -> GroupPlan<T> {
         self.properties[0].make_enforcer(group)
     }
 }

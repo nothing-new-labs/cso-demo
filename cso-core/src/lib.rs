@@ -16,29 +16,31 @@ mod task;
 
 use crate::memo::{GroupPlanRef, Memo};
 use crate::metadata::MdAccessor;
-use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
+use crate::operator::{LogicalOperator, Operator, OperatorId, PhysicalOperator};
 use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::{RuleId, RuleSet};
 use crate::task::{OptimizeGroupTask, TaskRunner};
+use std::hash::Hash;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-pub trait OptimizerType: 'static {
+pub trait OptimizerType: 'static + PartialEq + Eq + Hash + Clone {
     type RuleId: RuleId;
+    type OperatorId: OperatorId;
 }
 
-pub struct LogicalPlan {
-    op: Rc<dyn LogicalOperator>,
-    inputs: Vec<LogicalPlan>,
-    required_properties: Vec<PhysicalProperties>,
+pub struct LogicalPlan<T: OptimizerType> {
+    op: Rc<dyn LogicalOperator<OptimizerType = T>>,
+    inputs: Vec<LogicalPlan<T>>,
+    required_properties: Vec<PhysicalProperties<T>>,
 }
 
-impl LogicalPlan {
+impl<T: OptimizerType> LogicalPlan<T> {
     #[inline]
     pub const fn new(
-        op: Rc<dyn LogicalOperator>,
-        inputs: Vec<LogicalPlan>,
-        required_properties: Vec<PhysicalProperties>,
+        op: Rc<dyn LogicalOperator<OptimizerType = T>>,
+        inputs: Vec<LogicalPlan<T>>,
+        required_properties: Vec<PhysicalProperties<T>>,
     ) -> Self {
         Self {
             op,
@@ -47,48 +49,48 @@ impl LogicalPlan {
         }
     }
 
-    pub fn required_properties(&self) -> &[PhysicalProperties] {
+    pub fn required_properties(&self) -> &[PhysicalProperties<T>] {
         &self.required_properties
     }
 }
 
 #[derive(Debug)]
-pub struct PhysicalPlan {
-    op: Rc<dyn PhysicalOperator>,
-    inputs: Vec<PhysicalPlan>,
+pub struct PhysicalPlan<T: OptimizerType> {
+    op: Rc<dyn PhysicalOperator<OptimizerType = T>>,
+    inputs: Vec<PhysicalPlan<T>>,
 }
 
-impl PhysicalPlan {
-    pub const fn new(op: Rc<dyn PhysicalOperator>, inputs: Vec<PhysicalPlan>) -> Self {
+impl<T: OptimizerType> PhysicalPlan<T> {
+    pub const fn new(op: Rc<dyn PhysicalOperator<OptimizerType = T>>, inputs: Vec<PhysicalPlan<T>>) -> Self {
         PhysicalPlan { op, inputs }
     }
 
-    pub fn operator(&self) -> &Rc<dyn PhysicalOperator> {
+    pub fn operator(&self) -> &Rc<dyn PhysicalOperator<OptimizerType = T>> {
         &self.op
     }
 
-    pub fn inputs(&self) -> &[PhysicalPlan] {
+    pub fn inputs(&self) -> &[PhysicalPlan<T>] {
         &self.inputs
     }
 }
 
-impl PartialEq<Self> for PhysicalPlan {
+impl<T: OptimizerType> PartialEq<Self> for PhysicalPlan<T> {
     fn eq(&self, other: &Self) -> bool {
         self.op.equal(other.op.as_ref()) && self.inputs.eq(other.inputs())
     }
 }
 
 #[derive(Clone)]
-pub struct Plan {
-    op: Operator,
-    inputs: Vec<Plan>,
+pub struct Plan<T: OptimizerType> {
+    op: Operator<T>,
+    inputs: Vec<Plan<T>>,
     _property: LogicalProperties,
-    group_plan: Option<GroupPlanRef>,
-    _required_properties: Vec<PhysicalProperties>,
+    group_plan: Option<GroupPlanRef<T>>,
+    _required_properties: Vec<PhysicalProperties<T>>,
 }
 
-impl Plan {
-    pub fn new(op: Operator, inputs: Vec<Plan>, group_plan: Option<GroupPlanRef>) -> Self {
+impl<T: OptimizerType> Plan<T> {
+    pub fn new(op: Operator<T>, inputs: Vec<Plan<T>>, group_plan: Option<GroupPlanRef<T>>) -> Self {
         Plan {
             op,
             inputs,
@@ -98,15 +100,15 @@ impl Plan {
         }
     }
 
-    pub fn inputs(&self) -> &[Plan] {
+    pub fn inputs(&self) -> &[Plan<T>] {
         &self.inputs
     }
 
-    pub fn group_plan(&self) -> Option<&GroupPlanRef> {
+    pub fn group_plan(&self) -> Option<&GroupPlanRef<T>> {
         self.group_plan.as_ref()
     }
 
-    pub fn operator(&self) -> &Operator {
+    pub fn operator(&self) -> &Operator<T> {
         &self.op
     }
 }
@@ -129,11 +131,11 @@ impl<T: OptimizerType> Optimizer<T> {
 
     pub fn optimize(
         &mut self,
-        plan: LogicalPlan,
-        required_properties: Rc<PhysicalProperties>,
+        plan: LogicalPlan<T>,
+        required_properties: Rc<PhysicalProperties<T>>,
         md_accessor: MdAccessor,
         rule_set: RuleSet<T>,
-    ) -> PhysicalPlan {
+    ) -> PhysicalPlan<T> {
         let mut optimizer_ctx = OptimizerContext::new(md_accessor, required_properties.clone(), rule_set);
         optimizer_ctx.memo_mut().init(plan);
         let mut task_runner = TaskRunner::new();
@@ -146,14 +148,14 @@ impl<T: OptimizerType> Optimizer<T> {
 }
 
 pub struct OptimizerContext<T: OptimizerType> {
-    memo: Memo,
+    memo: Memo<T>,
     rule_set: RuleSet<T>,
     md_accessor: MdAccessor,
-    required_properties: Rc<PhysicalProperties>,
+    required_properties: Rc<PhysicalProperties<T>>,
 }
 
 impl<T: OptimizerType> OptimizerContext<T> {
-    fn new(md_accessor: MdAccessor, required_properties: Rc<PhysicalProperties>, rule_set: RuleSet<T>) -> Self {
+    fn new(md_accessor: MdAccessor, required_properties: Rc<PhysicalProperties<T>>, rule_set: RuleSet<T>) -> Self {
         OptimizerContext {
             memo: Memo::new(),
             md_accessor,
@@ -162,11 +164,11 @@ impl<T: OptimizerType> OptimizerContext<T> {
         }
     }
 
-    pub fn memo_mut(&mut self) -> &mut Memo {
+    pub fn memo_mut(&mut self) -> &mut Memo<T> {
         &mut self.memo
     }
 
-    pub fn memo(&self) -> &Memo {
+    pub fn memo(&self) -> &Memo<T> {
         &self.memo
     }
 
@@ -182,7 +184,7 @@ impl<T: OptimizerType> OptimizerContext<T> {
         &self.md_accessor
     }
 
-    pub fn required_properties(&self) -> &Rc<PhysicalProperties> {
+    pub fn required_properties(&self) -> &Rc<PhysicalProperties<T>> {
         &self.required_properties
     }
 }

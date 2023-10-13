@@ -2,27 +2,23 @@ use crate::memo::GroupRef;
 use crate::task::{OptimizePlanTask, Task, TaskRunner};
 use crate::{OptimizerContext, OptimizerType};
 
-pub struct ExploreGroupTask {
-    group: GroupRef,
+pub struct ExploreGroupTask<T: OptimizerType> {
+    group: GroupRef<T>,
 }
 
-impl<T: OptimizerType> From<ExploreGroupTask> for Task<T> {
+impl<T: OptimizerType> From<ExploreGroupTask<T>> for Task<T> {
     #[inline]
-    fn from(task: ExploreGroupTask) -> Self {
+    fn from(task: ExploreGroupTask<T>) -> Self {
         Task::ExploreGroup(task)
     }
 }
 
-impl ExploreGroupTask {
-    pub const fn new(group: GroupRef) -> Self {
+impl<T: OptimizerType> ExploreGroupTask<T> {
+    pub const fn new(group: GroupRef<T>) -> Self {
         ExploreGroupTask { group }
     }
 
-    pub(super) fn execute<T: OptimizerType>(
-        self,
-        task_runner: &mut TaskRunner<T>,
-        _optimizer_ctx: &mut OptimizerContext<T>,
-    ) {
+    pub(super) fn execute(self, task_runner: &mut TaskRunner<T>, _optimizer_ctx: &mut OptimizerContext<T>) {
         let mut group = self.group.borrow_mut();
         if group.is_explored() {
             return;

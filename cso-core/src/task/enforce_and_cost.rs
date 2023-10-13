@@ -4,21 +4,21 @@ use crate::task::{OptimizeGroupTask, Task, TaskRunner};
 use crate::{OptimizerContext, OptimizerType};
 use std::rc::Rc;
 
-pub struct EnforceAndCostTask {
-    plan: GroupPlanRef,
-    required_prop: Rc<PhysicalProperties>,
+pub struct EnforceAndCostTask<T: OptimizerType> {
+    plan: GroupPlanRef<T>,
+    required_prop: Rc<PhysicalProperties<T>>,
     prev_index: usize,
 }
 
-impl<T: OptimizerType> From<EnforceAndCostTask> for Task<T> {
+impl<T: OptimizerType> From<EnforceAndCostTask<T>> for Task<T> {
     #[inline]
-    fn from(task: EnforceAndCostTask) -> Self {
+    fn from(task: EnforceAndCostTask<T>) -> Self {
         Task::EnforceAndCost(task)
     }
 }
 
-impl Clone for EnforceAndCostTask {
-    fn clone(&self) -> EnforceAndCostTask {
+impl<T: OptimizerType> Clone for EnforceAndCostTask<T> {
+    fn clone(&self) -> EnforceAndCostTask<T> {
         Self {
             plan: self.plan.clone(),
             required_prop: self.required_prop.clone(),
@@ -27,8 +27,8 @@ impl Clone for EnforceAndCostTask {
     }
 }
 
-impl EnforceAndCostTask {
-    pub const fn new(new_plan: GroupPlanRef, new_required_prop: Rc<PhysicalProperties>) -> Self {
+impl<T: OptimizerType> EnforceAndCostTask<T> {
+    pub const fn new(new_plan: GroupPlanRef<T>, new_required_prop: Rc<PhysicalProperties<T>>) -> Self {
         EnforceAndCostTask {
             plan: new_plan,
             required_prop: new_required_prop,
@@ -36,7 +36,7 @@ impl EnforceAndCostTask {
         }
     }
 
-    fn make_child_required_props_list(&self) -> Vec<Vec<Rc<PhysicalProperties>>> {
+    fn make_child_required_props_list(&self) -> Vec<Vec<Rc<PhysicalProperties<T>>>> {
         self.plan
             .borrow()
             .operator()
@@ -44,7 +44,7 @@ impl EnforceAndCostTask {
             .required_properties(self.required_prop.clone())
     }
 
-    fn add_enforcer_to_group(&self, required_prop: &PhysicalProperties, memo: &mut Memo) -> GroupPlanRef {
+    fn add_enforcer_to_group(&self, required_prop: &PhysicalProperties<T>, memo: &mut Memo<T>) -> GroupPlanRef<T> {
         let group = self.plan.borrow().group();
         let group_plan = required_prop.make_enforcer(group.clone());
         memo.insert_group_plan(group_plan, Some(group))
@@ -54,7 +54,7 @@ impl EnforceAndCostTask {
         self.prev_index
     }
 
-    fn submit_cost_plan(&self, child_output_props: Vec<Rc<PhysicalProperties>>, memo: &mut Memo) {
+    fn submit_cost_plan(&self, child_output_props: Vec<Rc<PhysicalProperties<T>>>, memo: &mut Memo<T>) {
         let output_prop = {
             let mut curr_plan = self.plan.borrow_mut();
             let curr_group = curr_plan.group();
@@ -90,11 +90,7 @@ impl EnforceAndCostTask {
      * 3. once we get all output property of one candidate loop, derive output property base of current operator
      * 4. if output property does not satisfied require property, add enforcers and submit (Cost, GroupPlan) pair
      */
-    pub(super) fn execute<T: OptimizerType>(
-        mut self,
-        task_runner: &mut TaskRunner<T>,
-        optimizer_ctx: &mut OptimizerContext<T>,
-    ) {
+    pub(super) fn execute(mut self, task_runner: &mut TaskRunner<T>, optimizer_ctx: &mut OptimizerContext<T>) {
         // 1. according to current operator create new requestPropList for children
         let reqd_props_list = self.make_child_required_props_list();
         for (index, child_required_props) in reqd_props_list.iter().enumerate().skip(self.prev_index()) {

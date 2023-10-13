@@ -1,10 +1,9 @@
 use crate::operator::logical_filter::LogicalFilter;
 use crate::operator::physical_filter::PhysicalFilter;
+use crate::operator::OperatorId;
 use crate::rule::RuleId;
-use crate::Demo;
+use crate::{Demo, OptimizerContext, Pattern, PatternType, Plan};
 use cso_core::operator::Operator;
-use cso_core::rule::{Pattern, PatternType, Rule};
-use cso_core::{OptimizerContext, Plan};
 use std::rc::Rc;
 
 pub struct FilterImplementation {
@@ -14,12 +13,15 @@ pub struct FilterImplementation {
 impl FilterImplementation {
     pub fn new() -> Self {
         FilterImplementation {
-            pattern: Pattern::with_children(PatternType::LogicalOperator(2), vec![Pattern::new(PatternType::Leaf)]),
+            pattern: Pattern::with_children(
+                PatternType::Operator(OperatorId::LogicalFilter),
+                vec![Pattern::new(PatternType::Leaf)],
+            ),
         }
     }
 }
 
-impl Rule for FilterImplementation {
+impl cso_core::rule::Rule for FilterImplementation {
     type OptimizerType = Demo;
 
     fn name(&self) -> &str {
@@ -34,7 +36,7 @@ impl Rule for FilterImplementation {
         &self.pattern
     }
 
-    fn transform(&self, input: &Plan, _context: &mut OptimizerContext<Demo>) -> Vec<Plan> {
+    fn transform(&self, input: &Plan, _context: &mut OptimizerContext) -> Vec<Plan> {
         let logical_filter = input.operator().logical_op().downcast_ref::<LogicalFilter>().unwrap();
         let physical_filter = PhysicalFilter::new(logical_filter.predicate().clone());
         vec![Plan::new(

@@ -15,12 +15,12 @@ pub use optimize_plan::OptimizePlanTask;
 use crate::{OptimizerContext, OptimizerType};
 
 pub(crate) enum Task<T: OptimizerType> {
-    OptimizeGroup(OptimizeGroupTask),
-    OptimizePlan(OptimizePlanTask),
+    OptimizeGroup(OptimizeGroupTask<T>),
+    OptimizePlan(OptimizePlanTask<T>),
     ApplyRule(ApplyRuleTask<T>),
-    EnforceAndCost(EnforceAndCostTask),
-    DeriveStats(DeriveStatsTask),
-    ExploreGroup(ExploreGroupTask),
+    EnforceAndCost(EnforceAndCostTask<T>),
+    DeriveStats(DeriveStatsTask<T>),
+    ExploreGroup(ExploreGroupTask<T>),
 }
 
 impl<T: OptimizerType> Task<T> {

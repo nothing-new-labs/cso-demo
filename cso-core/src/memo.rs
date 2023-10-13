@@ -9,22 +9,22 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 
-type RequireToOutputMap = HashMap<Rc<PhysicalProperties>, Rc<PhysicalProperties>>;
+type RequireToOutputMap<T> = HashMap<Rc<PhysicalProperties<T>>, Rc<PhysicalProperties<T>>>;
 
 #[derive(Debug)]
-pub struct GroupPlan {
-    group: GroupWeakRef,
-    op: Operator,
-    inputs: Vec<GroupRef>,
+pub struct GroupPlan<T: OptimizerType> {
+    group: GroupWeakRef<T>,
+    op: Operator<T>,
+    inputs: Vec<GroupRef<T>>,
     rule_masks: BitSet,
-    require_to_output_map: RequireToOutputMap,
+    require_to_output_map: RequireToOutputMap<T>,
     stats_derived: bool,
 }
 
-pub type GroupPlanRef = Rc<RefCell<GroupPlan>>;
+pub type GroupPlanRef<T> = Rc<RefCell<GroupPlan<T>>>;
 
-impl GroupPlan {
-    pub fn new(op: Operator, inputs: Vec<GroupRef>) -> Self {
+impl<T: OptimizerType> GroupPlan<T> {
+    pub fn new(op: Operator<T>, inputs: Vec<GroupRef<T>>) -> Self {
         GroupPlan {
             group: GroupWeakRef::new(),
             op,
@@ -35,11 +35,11 @@ impl GroupPlan {
         }
     }
 
-    fn set_group(&mut self, group: GroupWeakRef) {
+    fn set_group(&mut self, group: GroupWeakRef<T>) {
         self.group = group;
     }
 
-    pub fn group(&self) -> GroupRef {
+    pub fn group(&self) -> GroupRef<T> {
         self.group.upgrade().expect("expect the group is existing")
     }
 
@@ -51,15 +51,15 @@ impl GroupPlan {
             .group_id()
     }
 
-    pub fn operator(&self) -> &Operator {
+    pub fn operator(&self) -> &Operator<T> {
         &self.op
     }
 
-    pub fn inputs(&self) -> &[GroupRef] {
+    pub fn inputs(&self) -> &[GroupRef<T>] {
         &self.inputs
     }
 
-    pub fn is_rule_explored<T: OptimizerType>(&self, rule: &dyn Rule<OptimizerType = T>) -> bool {
+    pub fn is_rule_explored(&self, rule: &dyn Rule<OptimizerType = T>) -> bool {
         self.rule_masks.contains(rule.rule_id().as_usize())
     }
 
@@ -71,7 +71,7 @@ impl GroupPlan {
         self.stats_derived = true;
     }
 
-    pub fn derive_statistics<T: OptimizerType>(&self, optimizer_ctx: &OptimizerContext<T>) -> Rc<dyn Stats> {
+    pub fn derive_statistics(&self, optimizer_ctx: &OptimizerContext<T>) -> Rc<dyn Stats> {
         let mut input_stats = Vec::with_capacity(self.inputs.len());
 
         for input in &self.inputs {
@@ -86,7 +86,7 @@ impl GroupPlan {
         self.op.logical_op().derive_statistics(md_accessor, input_stats)
     }
 
-    pub fn get_output_prop(&self, reqd_prop: &PhysicalProperties) -> &Rc<PhysicalProperties> {
+    pub fn get_output_prop(&self, reqd_prop: &PhysicalProperties<T>) -> &Rc<PhysicalProperties<T>> {
         self.require_to_output_map.get(reqd_prop).expect("output not null")
     }
 
@@ -96,36 +96,36 @@ impl GroupPlan {
 
     pub fn update_require_to_output_map(
         &mut self,
-        reqd_prop: &Rc<PhysicalProperties>,
-        output_prop: &Rc<PhysicalProperties>,
+        reqd_prop: &Rc<PhysicalProperties<T>>,
+        output_prop: &Rc<PhysicalProperties<T>>,
     ) {
         self.require_to_output_map
             .insert(reqd_prop.clone(), output_prop.clone());
     }
 
-    pub fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
+    pub fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties<T>>]) -> Rc<PhysicalProperties<T>> {
         self.op.physical_op().derive_output_properties(child_props)
     }
 }
 
-type LowestCostPlans = HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)>;
-type ChildRequiredPropertiesMap = HashMap<Rc<PhysicalProperties>, (Cost, Vec<Rc<PhysicalProperties>>)>;
+type LowestCostPlans<T> = HashMap<Rc<PhysicalProperties<T>>, (Cost, GroupPlanRef<T>)>;
+type ChildRequiredPropertiesMap<T> = HashMap<Rc<PhysicalProperties<T>>, (Cost, Vec<Rc<PhysicalProperties<T>>>)>;
 
 #[derive(Debug)]
-pub struct Group {
+pub struct Group<T: OptimizerType> {
     group_id: u32,
-    logical_plans: Vec<GroupPlanRef>,
-    physical_plans: Vec<GroupPlanRef>,
+    logical_plans: Vec<GroupPlanRef<T>>,
+    physical_plans: Vec<GroupPlanRef<T>>,
     is_explored: bool,
     statistics: Option<Rc<dyn Stats>>,
-    lowest_cost_plans: LowestCostPlans,
-    child_required_properties: ChildRequiredPropertiesMap,
+    lowest_cost_plans: LowestCostPlans<T>,
+    child_required_properties: ChildRequiredPropertiesMap<T>,
 }
 
-pub type GroupRef = Rc<RefCell<Group>>;
-pub type GroupWeakRef = Weak<RefCell<Group>>;
+pub type GroupRef<T> = Rc<RefCell<Group<T>>>;
+pub type GroupWeakRef<T> = Weak<RefCell<Group<T>>>;
 
-impl Group {
+impl<T: OptimizerType> Group<T> {
     fn new(group_id: u32) -> Self {
         Group {
             group_id,
@@ -142,15 +142,15 @@ impl Group {
         self.group_id
     }
 
-    pub fn logical_plans(&self) -> &[GroupPlanRef] {
+    pub fn logical_plans(&self) -> &[GroupPlanRef<T>] {
         &self.logical_plans
     }
 
-    pub fn physical_plans(&self) -> &[GroupPlanRef] {
+    pub fn physical_plans(&self) -> &[GroupPlanRef<T>] {
         &self.physical_plans
     }
 
-    fn add_plan(this: &GroupRef, mut plan: GroupPlan) -> GroupPlanRef {
+    fn add_plan(this: &GroupRef<T>, mut plan: GroupPlan<T>) -> GroupPlanRef<T> {
         plan.set_group(GroupRef::downgrade(this));
         match plan.op {
             Operator::Logical(_) => {
@@ -193,18 +193,18 @@ impl Group {
         &self.statistics
     }
 
-    pub fn lowest_cost_plans(&self) -> &HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)> {
+    pub fn lowest_cost_plans(&self) -> &HashMap<Rc<PhysicalProperties<T>>, (Cost, GroupPlanRef<T>)> {
         &self.lowest_cost_plans
     }
 
-    pub fn lowest_cost_plans_mut(&mut self) -> &mut HashMap<Rc<PhysicalProperties>, (Cost, GroupPlanRef)> {
+    pub fn lowest_cost_plans_mut(&mut self) -> &mut HashMap<Rc<PhysicalProperties<T>>, (Cost, GroupPlanRef<T>)> {
         &mut self.lowest_cost_plans
     }
 
     pub fn update_cost_plan(
         &mut self,
-        required_prop: &Rc<PhysicalProperties>,
-        curr_plan: &GroupPlanRef,
+        required_prop: &Rc<PhysicalProperties<T>>,
+        curr_plan: &GroupPlanRef<T>,
         curr_cost: Cost,
     ) {
         if let Some((cost, _group_plan)) = self.lowest_cost_plans.get(required_prop) {
@@ -220,8 +220,8 @@ impl Group {
 
     pub fn update_child_required_props(
         &mut self,
-        required_prop: &Rc<PhysicalProperties>,
-        child_required_props: Vec<Rc<PhysicalProperties>>,
+        required_prop: &Rc<PhysicalProperties<T>>,
+        child_required_props: Vec<Rc<PhysicalProperties<T>>>,
         curr_cost: Cost,
     ) {
         if let Some((cost, _child_reqds)) = self.child_required_properties.get(required_prop) {
@@ -235,15 +235,18 @@ impl Group {
             .insert(required_prop.clone(), (curr_cost, child_required_props));
     }
 
-    fn best_plan(&self, required_prop: &PhysicalProperties) -> Option<&(Cost, GroupPlanRef)> {
+    fn best_plan(&self, required_prop: &PhysicalProperties<T>) -> Option<&(Cost, GroupPlanRef<T>)> {
         self.lowest_cost_plans.get(required_prop)
     }
 
-    fn child_required_props(&self, required_prop: &PhysicalProperties) -> Option<&(Cost, Vec<Rc<PhysicalProperties>>)> {
+    fn child_required_props(
+        &self,
+        required_prop: &PhysicalProperties<T>,
+    ) -> Option<&(Cost, Vec<Rc<PhysicalProperties<T>>>)> {
         self.child_required_properties.get(required_prop)
     }
 
-    pub fn extract_best_plan(&self, required_properties: &PhysicalProperties) -> PhysicalPlan {
+    pub fn extract_best_plan(&self, required_properties: &PhysicalProperties<T>) -> PhysicalPlan<T> {
         let (_, plan) = self.best_plan(required_properties).unwrap();
         let operator = plan.borrow().operator().physical_op().clone();
 
@@ -263,13 +266,13 @@ impl Group {
 }
 
 #[derive(Debug)]
-pub struct Memo {
-    groups: Vec<GroupRef>,
-    root_group: Option<GroupRef>,
+pub struct Memo<T: OptimizerType> {
+    groups: Vec<GroupRef<T>>,
+    root_group: Option<GroupRef<T>>,
     next_group_id: u32,
 }
 
-impl Memo {
+impl<T: OptimizerType> Memo<T> {
     #[inline]
     pub const fn new() -> Self {
         Memo {
@@ -279,12 +282,12 @@ impl Memo {
         }
     }
 
-    pub fn init(&mut self, plan: LogicalPlan) {
+    pub fn init(&mut self, plan: LogicalPlan<T>) {
         let root_group = self.copy_in(None, plan);
         self.root_group = Some(root_group);
     }
 
-    pub(crate) fn copy_in_plan(&mut self, target_group: Option<GroupRef>, plan: &Plan) -> GroupPlanRef {
+    pub(crate) fn copy_in_plan(&mut self, target_group: Option<GroupRef<T>>, plan: &Plan<T>) -> GroupPlanRef<T> {
         let mut inputs = Vec::new();
         for input in plan.inputs() {
             let group = match input.group_plan() {
@@ -299,7 +302,7 @@ impl Memo {
         self.insert_group_plan(group_plan, target_group)
     }
 
-    fn copy_in(&mut self, target_group: Option<GroupRef>, plan: LogicalPlan) -> GroupRef {
+    fn copy_in(&mut self, target_group: Option<GroupRef<T>>, plan: LogicalPlan<T>) -> GroupRef<T> {
         let mut inputs = Vec::new();
         for input in plan.inputs {
             let group = self.copy_in(None, input);
@@ -312,7 +315,7 @@ impl Memo {
         group
     }
 
-    pub fn insert_group_plan(&mut self, plan: GroupPlan, target_group: Option<GroupRef>) -> GroupPlanRef {
+    pub fn insert_group_plan(&mut self, plan: GroupPlan<T>, target_group: Option<GroupRef<T>>) -> GroupPlanRef<T> {
         let target_group = match target_group {
             None => self.new_group(),
             Some(group) => group,
@@ -322,7 +325,7 @@ impl Memo {
     }
 
     #[inline]
-    fn new_group(&mut self) -> GroupRef {
+    fn new_group(&mut self) -> GroupRef<T> {
         let group = Rc::new(RefCell::new(Group::new(self.next_group_id)));
         self.next_group_id += 1;
         let group_clone = group.clone();
@@ -330,11 +333,11 @@ impl Memo {
         group_clone
     }
 
-    pub fn root_group(&self) -> &GroupRef {
+    pub fn root_group(&self) -> &GroupRef<T> {
         self.root_group.as_ref().expect("expect the root group is existing")
     }
 
-    pub fn extract_best_plan(&self, required_properties: &PhysicalProperties) -> PhysicalPlan {
+    pub fn extract_best_plan(&self, required_properties: &PhysicalProperties<T>) -> PhysicalPlan<T> {
         self.root_group().borrow().extract_best_plan(required_properties)
     }
 }

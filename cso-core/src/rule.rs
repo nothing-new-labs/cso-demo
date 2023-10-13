@@ -6,36 +6,36 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use std::rc::Rc;
 
-pub enum PatternType {
-    LogicalOperator(i16),
+pub enum PatternType<T: OptimizerType> {
+    Operator(T::OperatorId),
     Tree,
     Leaf,
     MultiLeaf,
 }
 
-pub struct Pattern {
-    pattern_type: PatternType,
-    children: Vec<Pattern>,
+pub struct Pattern<T: OptimizerType> {
+    pattern_type: PatternType<T>,
+    children: Vec<Pattern<T>>,
 }
 
-impl Pattern {
+impl<T: OptimizerType> Pattern<T> {
     #[inline]
-    pub const fn new(pattern_type: PatternType) -> Pattern {
+    pub const fn new(pattern_type: PatternType<T>) -> Pattern<T> {
         Pattern {
             pattern_type,
             children: Vec::new(),
         }
     }
 
-    pub const fn with_children(pattern_type: PatternType, children: Vec<Pattern>) -> Self {
+    pub const fn with_children(pattern_type: PatternType<T>, children: Vec<Pattern<T>>) -> Self {
         Pattern { pattern_type, children }
     }
 
-    pub fn children(&self) -> &[Pattern] {
+    pub fn children(&self) -> &[Pattern<T>] {
         &self.children
     }
 
-    pub fn child(&self, index: usize) -> &Pattern {
+    pub fn child(&self, index: usize) -> &Pattern<T> {
         &self.children[index]
     }
 
@@ -51,8 +51,8 @@ impl Pattern {
         matches!(self.pattern_type, PatternType::Leaf | PatternType::MultiLeaf)
     }
 
-    pub fn is_logical_operator(&self, operator_id: i16) -> bool {
-        if let PatternType::LogicalOperator(id) = self.pattern_type {
+    pub fn is_logical_operator(&self, operator_id: &T::OperatorId) -> bool {
+        if let PatternType::Operator(ref id) = self.pattern_type {
             if id == operator_id {
                 return true;
             }
@@ -60,7 +60,7 @@ impl Pattern {
         false
     }
 
-    pub fn match_without_child(&self, plan: &GroupPlan) -> bool {
+    pub fn match_without_child(&self, plan: &GroupPlan<T>) -> bool {
         if plan.inputs().len() < self.children.len() && self.children.iter().all(|child| !child.is_multi_leaf()) {
             return false;
         }
@@ -85,10 +85,14 @@ pub trait Rule: Any {
 
     fn name(&self) -> &str;
     fn rule_id(&self) -> <Self::OptimizerType as OptimizerType>::RuleId;
-    fn pattern(&self) -> &Pattern;
-    fn transform(&self, input: &Plan, context: &mut OptimizerContext<Self::OptimizerType>) -> Vec<Plan>;
+    fn pattern(&self) -> &Pattern<Self::OptimizerType>;
+    fn transform(
+        &self,
+        input: &Plan<Self::OptimizerType>,
+        context: &mut OptimizerContext<Self::OptimizerType>,
+    ) -> Vec<Plan<Self::OptimizerType>>;
 
-    fn check(&self, _input: &Plan, _context: &OptimizerContext<Self::OptimizerType>) -> bool {
+    fn check(&self, _input: &Plan<Self::OptimizerType>, _context: &OptimizerContext<Self::OptimizerType>) -> bool {
         true
     }
 
@@ -147,15 +151,15 @@ impl<T: OptimizerType> RuleSet<T> {
     }
 }
 
-pub(crate) struct Binding<'a> {
-    pattern: &'a Pattern,
-    plan: &'a GroupPlanRef,
+pub(crate) struct Binding<'a, T: OptimizerType> {
+    pattern: &'a Pattern<T>,
+    plan: &'a GroupPlanRef<T>,
     group_trace_id: usize,
     group_plan_index: Vec<u32>,
 }
 
-impl<'a> Binding<'a> {
-    pub fn new(pattern: &'a Pattern, plan: &'a GroupPlanRef) -> Self {
+impl<'a, T: OptimizerType> Binding<'a, T> {
+    pub fn new(pattern: &'a Pattern<T>, plan: &'a GroupPlanRef<T>) -> Self {
         Binding {
             pattern,
             plan,
@@ -164,7 +168,7 @@ impl<'a> Binding<'a> {
         }
     }
 
-    fn extract_group_plan(&mut self, pattern: &Pattern, group: &Group) -> Option<GroupPlanRef> {
+    fn extract_group_plan(&mut self, pattern: &Pattern<T>, group: &Group<T>) -> Option<GroupPlanRef<T>> {
         if pattern.is_leaf_or_multi_leaf() {
             if self.group_plan_index[self.group_trace_id] > 0 {
                 self.group_plan_index.remove(self.group_trace_id);
@@ -183,7 +187,7 @@ impl<'a> Binding<'a> {
         }
     }
 
-    fn matches(&mut self, pattern: &Pattern, group_plan: &GroupPlanRef) -> Option<Plan> {
+    fn matches(&mut self, pattern: &Pattern<T>, group_plan: &GroupPlanRef<T>) -> Option<Plan<T>> {
         let curr_plan = group_plan.borrow();
 
         if !pattern.match_without_child(curr_plan.deref()) {
@@ -220,7 +224,7 @@ impl<'a> Binding<'a> {
         ))
     }
 
-    fn next(&mut self) -> Option<Plan> {
+    fn next(&mut self) -> Option<Plan<T>> {
         if self.pattern.children().is_empty() && self.group_plan_index[0] > 0 {
             return None;
         }
@@ -239,8 +243,8 @@ impl<'a> Binding<'a> {
     }
 }
 
-impl<'a> Iterator for Binding<'a> {
-    type Item = Plan;
+impl<'a, T: OptimizerType> Iterator for Binding<'a, T> {
+    type Item = Plan<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.next()

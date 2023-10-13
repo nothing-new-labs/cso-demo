@@ -3,8 +3,8 @@ use crate::rule::{Binding, RuleRef};
 use crate::task::{EnforceAndCostTask, OptimizePlanTask, Task, TaskRunner};
 use crate::{OptimizerContext, OptimizerType};
 
-pub struct ApplyRuleTask<T> {
-    plan: GroupPlanRef,
+pub struct ApplyRuleTask<T: OptimizerType> {
+    plan: GroupPlanRef<T>,
     rule: RuleRef<T>,
 }
 
@@ -16,7 +16,7 @@ impl<T: OptimizerType> From<ApplyRuleTask<T>> for Task<T> {
 }
 
 impl<T: OptimizerType> ApplyRuleTask<T> {
-    pub const fn new(plan: GroupPlanRef, rule: RuleRef<T>) -> Self {
+    pub const fn new(plan: GroupPlanRef<T>, rule: RuleRef<T>) -> Self {
         ApplyRuleTask { plan, rule }
     }
 

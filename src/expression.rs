@@ -1,5 +1,6 @@
-use cso_core::expression::ScalarExpression;
 use std::fmt::Debug;
+
+pub use cso_core::expression::{AggregateExpression, ScalarExpression};
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
 #[repr(transparent)]

@@ -1,6 +1,7 @@
+use crate::operator::{OperatorId, PhysicalOperator};
+use crate::property::PhysicalProperties;
+use crate::Demo;
 use cso_core::expression::ScalarExpression;
-use cso_core::operator::PhysicalOperator;
-use cso_core::property::PhysicalProperties;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
@@ -19,13 +20,19 @@ impl PhysicalFilter {
     }
 }
 
-impl PhysicalOperator for PhysicalFilter {
+impl cso_core::operator::PhysicalOperator for PhysicalFilter {
+    type OptimizerType = Demo;
+
     fn name(&self) -> &str {
         "physical filter"
     }
 
-    fn operator_id(&self) -> i16 {
-        5
+    fn operator_id(&self) -> &OperatorId {
+        &OperatorId::PhysicalFilter
+    }
+
+    fn clone(&self) -> Box<PhysicalOperator> {
+        Box::new(Clone::clone(self))
     }
 
     fn derive_output_properties(&self, child_output_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
@@ -36,7 +43,7 @@ impl PhysicalOperator for PhysicalFilter {
         vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
     }
 
-    fn equal(&self, other: &dyn PhysicalOperator) -> bool {
+    fn equal(&self, other: &PhysicalOperator) -> bool {
         match other.downcast_ref::<PhysicalFilter>() {
             Some(other) => self.eq(other),
             None => false,

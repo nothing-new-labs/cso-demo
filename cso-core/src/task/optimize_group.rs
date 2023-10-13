@@ -4,28 +4,24 @@ use crate::task::{EnforceAndCostTask, OptimizePlanTask, Task, TaskRunner};
 use crate::{OptimizerContext, OptimizerType};
 use std::rc::Rc;
 
-pub struct OptimizeGroupTask {
-    group: GroupRef,
-    required_prop: Rc<PhysicalProperties>,
+pub struct OptimizeGroupTask<T: OptimizerType> {
+    group: GroupRef<T>,
+    required_prop: Rc<PhysicalProperties<T>>,
 }
 
-impl<T: OptimizerType> From<OptimizeGroupTask> for Task<T> {
+impl<T: OptimizerType> From<OptimizeGroupTask<T>> for Task<T> {
     #[inline]
-    fn from(task: OptimizeGroupTask) -> Self {
+    fn from(task: OptimizeGroupTask<T>) -> Self {
         Task::OptimizeGroup(task)
     }
 }
 
-impl OptimizeGroupTask {
-    pub const fn new(group: GroupRef, required_prop: Rc<PhysicalProperties>) -> Self {
+impl<T: OptimizerType> OptimizeGroupTask<T> {
+    pub const fn new(group: GroupRef<T>, required_prop: Rc<PhysicalProperties<T>>) -> Self {
         OptimizeGroupTask { group, required_prop }
     }
 
-    pub(super) fn execute<T: OptimizerType>(
-        self,
-        task_runner: &mut TaskRunner<T>,
-        _optimizer_ctx: &mut OptimizerContext<T>,
-    ) {
+    pub(super) fn execute(self, task_runner: &mut TaskRunner<T>, _optimizer_ctx: &mut OptimizerContext<T>) {
         let mut group = self.group.borrow_mut();
 
         if !group.is_explored() {

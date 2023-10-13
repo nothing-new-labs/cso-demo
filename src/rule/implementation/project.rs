@@ -1,10 +1,10 @@
 use crate::operator::logical_project::LogicalProject;
 use crate::operator::physical_project::PhysicalProject;
+use crate::operator::OperatorId;
 use crate::rule::RuleId;
-use crate::Demo;
+use crate::{Demo, Pattern, PatternType};
+use crate::{OptimizerContext, Plan};
 use cso_core::operator::Operator;
-use cso_core::rule::{Pattern, PatternType, Rule};
-use cso_core::{OptimizerContext, Plan};
 use std::rc::Rc;
 use std::vec;
 
@@ -15,12 +15,15 @@ pub struct ProjectImplementation {
 impl ProjectImplementation {
     pub fn new() -> Self {
         ProjectImplementation {
-            pattern: Pattern::with_children(PatternType::LogicalOperator(3), vec![Pattern::new(PatternType::Leaf)]),
+            pattern: Pattern::with_children(
+                PatternType::Operator(OperatorId::LogicalProject),
+                vec![Pattern::new(PatternType::Leaf)],
+            ),
         }
     }
 }
 
-impl Rule for ProjectImplementation {
+impl cso_core::rule::Rule for ProjectImplementation {
     type OptimizerType = Demo;
 
     fn name(&self) -> &str {
@@ -35,7 +38,7 @@ impl Rule for ProjectImplementation {
         &self.pattern
     }
 
-    fn transform(&self, input: &Plan, _context: &mut OptimizerContext<Demo>) -> Vec<Plan> {
+    fn transform(&self, input: &Plan, _context: &mut OptimizerContext) -> Vec<Plan> {
         let logical_project = input.operator().logical_op().downcast_ref::<LogicalProject>().unwrap();
         let physical_project = PhysicalProject::new(logical_project.project().to_vec());
         vec![Plan::new(

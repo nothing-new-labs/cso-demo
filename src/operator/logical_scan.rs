@@ -1,5 +1,7 @@
 use crate::expression::ColumnVar;
+use crate::operator::OperatorId;
 use crate::statistics::{RelationMetadata, RelationStats, Statistics};
+use crate::Demo;
 use cso_core::metadata::MdAccessor;
 use cso_core::metadata::MdId;
 use cso_core::metadata::Stats;
@@ -82,12 +84,14 @@ impl LogicalScan {
 }
 
 impl LogicalOperator for LogicalScan {
+    type OptimizerType = Demo;
+
     fn name(&self) -> &str {
         "logical get"
     }
 
-    fn operator_id(&self) -> i16 {
-        1
+    fn operator_id(&self) -> &OperatorId {
+        &OperatorId::LogicalScan
     }
 
     fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {
