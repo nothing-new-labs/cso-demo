@@ -10,7 +10,6 @@ use crate::any::AsAny;
 use crate::OptimizerType;
 use dyn_clonable::clonable;
 use serde::{Deserialize, Serialize};
-use serde_json_any_key::any_key_map;
 use std::collections::HashMap;
 use std::fmt::Debug;
 
@@ -27,7 +26,6 @@ impl dyn Metadata {
 
 #[derive(Serialize, Deserialize)]
 pub struct MdCache<T: OptimizerType> {
-    #[serde(with = "any_key_map")]
     cache: HashMap<T::MdId, Box<dyn Metadata>>,
 }
 

@@ -38,8 +38,6 @@ pub mod metadata {
 }
 
 pub(crate) type GroupPlan = cso_core::memo::GroupPlan<Demo>;
-// pub(crate) type GroupPlanRef = cso_core::memo::GroupPlanRef<Demo>;
-// pub(crate) type Group = cso_core::memo::Group<Demo>;
 pub(crate) type GroupRef = cso_core::memo::GroupRef<Demo>;
 pub(crate) type Pattern = cso_core::rule::Pattern<Demo>;
 pub(crate) type PatternType = cso_core::rule::PatternType<Demo>;
