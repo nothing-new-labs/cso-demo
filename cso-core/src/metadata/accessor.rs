@@ -6,11 +6,11 @@ use std::rc::Rc;
 
 pub struct MdAccessor<T: OptimizerType> {
     md_cache: RefCell<MdCache<T>>,
-    md_provider: Rc<dyn MdProvider<OptimizerType = T>>,
+    md_provider: Rc<dyn MdProvider<T>>,
 }
 
 impl<T: OptimizerType> MdAccessor<T> {
-    pub fn new(md_provider: Rc<dyn MdProvider<OptimizerType = T>>) -> Self {
+    pub fn new(md_provider: Rc<dyn MdProvider<T>>) -> Self {
         Self {
             md_cache: RefCell::new(MdCache::new()),
             md_provider,

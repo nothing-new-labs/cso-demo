@@ -1,10 +1,8 @@
 use crate::metadata::{MdCache, Metadata};
 use crate::OptimizerType;
 
-pub trait MdProvider {
-    type OptimizerType: OptimizerType;
-
-    fn retrieve_metadata(&self, md_id: &<Self::OptimizerType as OptimizerType>::MdId) -> Option<Box<dyn Metadata>>;
+pub trait MdProvider<T: OptimizerType> {
+    fn retrieve_metadata(&self, md_id: &T::MdId) -> Option<Box<dyn Metadata>>;
 }
 
 pub struct CachedMdProvider<T: OptimizerType> {
@@ -17,9 +15,7 @@ impl<T: OptimizerType> CachedMdProvider<T> {
     }
 }
 
-impl<T: OptimizerType> MdProvider for CachedMdProvider<T> {
-    type OptimizerType = T;
-
+impl<T: OptimizerType> MdProvider<T> for CachedMdProvider<T> {
     fn retrieve_metadata(&self, md_id: &T::MdId) -> Option<Box<dyn Metadata>> {
         match self.md_cache.get(md_id) {
             Some(md) => Some(md.clone()),
