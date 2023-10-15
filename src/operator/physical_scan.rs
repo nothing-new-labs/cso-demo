@@ -29,10 +29,6 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalScan {
         &OperatorId::PhysicalScan
     }
 
-    fn clone(&self) -> Box<PhysicalOperator> {
-        Box::new(Clone::clone(self))
-    }
-
     fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
         Rc::new(PhysicalProperties::new())
     }

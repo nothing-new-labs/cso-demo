@@ -29,10 +29,6 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalFilter {
         &OperatorId::PhysicalFilter
     }
 
-    fn clone(&self) -> Box<PhysicalOperator> {
-        Box::new(Clone::clone(self))
-    }
-
     fn derive_output_properties(&self, child_output_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
         child_output_props[0].clone()
     }

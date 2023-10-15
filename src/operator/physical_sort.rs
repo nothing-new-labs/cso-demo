@@ -41,10 +41,6 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalSort {
         &OperatorId::PhysicalSort
     }
 
-    fn clone(&self) -> Box<PhysicalOperator> {
-        Box::new(Clone::clone(self))
-    }
-
     fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
         PhysicalProperties::with_property(Box::new(SortProperty::with_order(self.order_spec.clone())))
     }

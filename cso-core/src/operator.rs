@@ -4,6 +4,7 @@ use crate::metadata::MdAccessor;
 use crate::metadata::Stats;
 use crate::property::PhysicalProperties;
 use crate::OptimizerType;
+use dyn_clonable::clonable;
 use std::fmt::Debug;
 use std::rc::Rc;
 
@@ -20,10 +21,10 @@ impl<O: OptimizerType> dyn LogicalOperator<O> {
     }
 }
 
-pub trait PhysicalOperator<T: OptimizerType>: AsAny + Debug {
+#[clonable]
+pub trait PhysicalOperator<T: OptimizerType>: AsAny + Clone + Debug {
     fn name(&self) -> &str;
     fn operator_id(&self) -> &T::OperatorId;
-    fn clone(&self) -> Box<dyn PhysicalOperator<T>>;
     fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties<T>>]) -> Rc<PhysicalProperties<T>>;
     fn required_properties(&self, input_prop: Rc<PhysicalProperties<T>>) -> Vec<Vec<Rc<PhysicalProperties<T>>>>;
     fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
@@ -36,12 +37,6 @@ impl<T: OptimizerType> dyn PhysicalOperator<T> {
     #[inline]
     pub fn downcast_ref<P: PhysicalOperator<T>>(&self) -> Option<&P> {
         self.as_any().downcast_ref::<P>()
-    }
-}
-
-impl<T: OptimizerType> Clone for Box<dyn PhysicalOperator<T>> {
-    fn clone(&self) -> Self {
-        PhysicalOperator::clone(self.as_ref())
     }
 }
 
