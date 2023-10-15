@@ -9,7 +9,7 @@ pub mod physical_scan;
 pub mod physical_sort;
 
 pub type PhysicalOperator = dyn cso_core::operator::PhysicalOperator<OptimizerType = Demo>;
-pub type LogicalOperator = dyn cso_core::operator::LogicalOperator<OptimizerType = Demo>;
+pub type LogicalOperator = dyn cso_core::operator::LogicalOperator<Demo>;
 
 #[derive(PartialEq, Debug)]
 #[repr(u8)]

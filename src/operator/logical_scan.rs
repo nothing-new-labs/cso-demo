@@ -78,9 +78,7 @@ impl LogicalScan {
     }
 }
 
-impl LogicalOperator for LogicalScan {
-    type OptimizerType = Demo;
-
+impl LogicalOperator<Demo> for LogicalScan {
     fn name(&self) -> &str {
         "logical get"
     }

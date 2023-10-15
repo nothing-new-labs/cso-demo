@@ -21,9 +21,7 @@ impl LogicalProject {
     }
 }
 
-impl LogicalOperator for LogicalProject {
-    type OptimizerType = Demo;
-
+impl LogicalOperator<Demo> for LogicalProject {
     fn name(&self) -> &str {
         "logical project"
     }

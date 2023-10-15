@@ -33,7 +33,7 @@ pub trait OptimizerType: 'static + PartialEq + Eq + Hash + Clone {
 }
 
 pub struct LogicalPlan<T: OptimizerType> {
-    op: Rc<dyn LogicalOperator<OptimizerType = T>>,
+    op: Rc<dyn LogicalOperator<T>>,
     inputs: Vec<LogicalPlan<T>>,
     required_properties: Vec<PhysicalProperties<T>>,
 }
@@ -41,7 +41,7 @@ pub struct LogicalPlan<T: OptimizerType> {
 impl<T: OptimizerType> LogicalPlan<T> {
     #[inline]
     pub const fn new(
-        op: Rc<dyn LogicalOperator<OptimizerType = T>>,
+        op: Rc<dyn LogicalOperator<T>>,
         inputs: Vec<LogicalPlan<T>>,
         required_properties: Vec<PhysicalProperties<T>>,
     ) -> Self {

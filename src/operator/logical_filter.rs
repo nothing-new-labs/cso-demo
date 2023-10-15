@@ -22,9 +22,7 @@ impl LogicalFilter {
     }
 }
 
-impl LogicalOperator for LogicalFilter {
-    type OptimizerType = Demo;
-
+impl LogicalOperator<Demo> for LogicalFilter {
     fn name(&self) -> &str {
         "logical filter"
     }

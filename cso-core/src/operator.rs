@@ -7,21 +7,15 @@ use crate::OptimizerType;
 use std::fmt::Debug;
 use std::rc::Rc;
 
-pub trait LogicalOperator: AsAny + Debug {
-    type OptimizerType: OptimizerType;
-
+pub trait LogicalOperator<T: OptimizerType>: AsAny + Debug {
     fn name(&self) -> &str;
-    fn operator_id(&self) -> &<Self::OptimizerType as OptimizerType>::OperatorId;
-    fn derive_statistics(
-        &self,
-        _md_accessor: &MdAccessor<Self::OptimizerType>,
-        input_stats: &[Rc<dyn Stats>],
-    ) -> Rc<dyn Stats>;
+    fn operator_id(&self) -> &T::OperatorId;
+    fn derive_statistics(&self, _md_accessor: &MdAccessor<T>, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats>;
 }
 
-impl<O: OptimizerType> dyn LogicalOperator<OptimizerType = O> {
+impl<O: OptimizerType> dyn LogicalOperator<O> {
     #[inline]
-    pub fn downcast_ref<T: LogicalOperator>(&self) -> Option<&T> {
+    pub fn downcast_ref<T: LogicalOperator<O>>(&self) -> Option<&T> {
         self.as_any().downcast_ref::<T>()
     }
 }
@@ -61,7 +55,7 @@ impl<T: OptimizerType> Clone for Box<dyn PhysicalOperator<OptimizerType = T>> {
 
 #[derive(Clone, Debug)]
 pub enum Operator<T: OptimizerType> {
-    Logical(Rc<dyn LogicalOperator<OptimizerType = T>>),
+    Logical(Rc<dyn LogicalOperator<T>>),
     Physical(Rc<dyn PhysicalOperator<OptimizerType = T>>),
 }
 
@@ -83,7 +77,7 @@ impl<T: OptimizerType> Operator<T> {
     }
 
     #[inline]
-    pub fn logical_op(&self) -> &Rc<dyn LogicalOperator<OptimizerType = T>> {
+    pub fn logical_op(&self) -> &Rc<dyn LogicalOperator<T>> {
         match self {
             Operator::Logical(op) => op,
             Operator::Physical(_) => unreachable!("expect logical operator"),
