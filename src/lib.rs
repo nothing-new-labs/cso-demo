@@ -34,7 +34,6 @@ pub mod metadata {
     pub type MdProvider = dyn cso_core::metadata::MdProvider<OptimizerType = Demo>;
     pub type CachedMdProvider = cso_core::metadata::CachedMdProvider<Demo>;
     pub use cso_core::metadata::Metadata;
-    pub use cso_core::metadata::Statistics;
     pub use cso_core::metadata::Stats;
 }
 

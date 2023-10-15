@@ -14,13 +14,7 @@ pub struct SortProperty {
 
 impl Property for SortProperty {}
 
-impl cso_core::property::PhysicalProperty for SortProperty {
-    type OptimizerType = Demo;
-
-    fn clone(&self) -> Box<PhysicalProperty> {
-        Box::new(Clone::clone(self))
-    }
-
+impl cso_core::property::PhysicalProperty<Demo> for SortProperty {
     fn hash(&self, mut hasher: &mut dyn Hasher) {
         Hash::hash(self, &mut hasher)
     }

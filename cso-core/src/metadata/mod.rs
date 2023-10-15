@@ -4,7 +4,7 @@ mod statistics;
 
 pub use self::accessor::MdAccessor;
 pub use self::provider::{CachedMdProvider, MdProvider};
-pub use self::statistics::{Statistics, Stats};
+pub use self::statistics::Stats;
 
 use crate::any::AsAny;
 use crate::OptimizerType;
