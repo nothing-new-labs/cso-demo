@@ -20,9 +20,7 @@ impl PhysicalFilter {
     }
 }
 
-impl cso_core::operator::PhysicalOperator for PhysicalFilter {
-    type OptimizerType = Demo;
-
+impl cso_core::operator::PhysicalOperator<Demo> for PhysicalFilter {
     fn name(&self) -> &str {
         "physical filter"
     }

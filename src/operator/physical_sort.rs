@@ -32,9 +32,7 @@ impl PhysicalSort {
     }
 }
 
-impl cso_core::operator::PhysicalOperator for PhysicalSort {
-    type OptimizerType = Demo;
-
+impl cso_core::operator::PhysicalOperator<Demo> for PhysicalSort {
     fn name(&self) -> &str {
         "physical sort"
     }

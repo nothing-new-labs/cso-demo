@@ -20,9 +20,7 @@ impl PhysicalScan {
     }
 }
 
-impl cso_core::operator::PhysicalOperator for PhysicalScan {
-    type OptimizerType = Demo;
-
+impl cso_core::operator::PhysicalOperator<Demo> for PhysicalScan {
     fn name(&self) -> &str {
         "physical scan"
     }

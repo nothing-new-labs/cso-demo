@@ -59,16 +59,16 @@ impl<T: OptimizerType> LogicalPlan<T> {
 
 #[derive(Debug)]
 pub struct PhysicalPlan<T: OptimizerType> {
-    op: Rc<dyn PhysicalOperator<OptimizerType = T>>,
+    op: Rc<dyn PhysicalOperator<T>>,
     inputs: Vec<PhysicalPlan<T>>,
 }
 
 impl<T: OptimizerType> PhysicalPlan<T> {
-    pub const fn new(op: Rc<dyn PhysicalOperator<OptimizerType = T>>, inputs: Vec<PhysicalPlan<T>>) -> Self {
+    pub const fn new(op: Rc<dyn PhysicalOperator<T>>, inputs: Vec<PhysicalPlan<T>>) -> Self {
         PhysicalPlan { op, inputs }
     }
 
-    pub fn operator(&self) -> &Rc<dyn PhysicalOperator<OptimizerType = T>> {
+    pub fn operator(&self) -> &Rc<dyn PhysicalOperator<T>> {
         &self.op
     }
 

@@ -15,9 +15,7 @@ impl PhysicalProject {
     }
 }
 
-impl cso_core::operator::PhysicalOperator for PhysicalProject {
-    type OptimizerType = Demo;
-
+impl cso_core::operator::PhysicalOperator<Demo> for PhysicalProject {
     fn name(&self) -> &str {
         "physical project"
     }

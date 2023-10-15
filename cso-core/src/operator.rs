@@ -20,34 +20,26 @@ impl<O: OptimizerType> dyn LogicalOperator<O> {
     }
 }
 
-pub trait PhysicalOperator: AsAny + Debug {
-    type OptimizerType: OptimizerType;
-
+pub trait PhysicalOperator<T: OptimizerType>: AsAny + Debug {
     fn name(&self) -> &str;
-    fn operator_id(&self) -> &<Self::OptimizerType as OptimizerType>::OperatorId;
-    fn clone(&self) -> Box<dyn PhysicalOperator<OptimizerType = Self::OptimizerType>>;
-    fn derive_output_properties(
-        &self,
-        child_props: &[Rc<PhysicalProperties<Self::OptimizerType>>],
-    ) -> Rc<PhysicalProperties<Self::OptimizerType>>;
-    fn required_properties(
-        &self,
-        input_prop: Rc<PhysicalProperties<Self::OptimizerType>>,
-    ) -> Vec<Vec<Rc<PhysicalProperties<Self::OptimizerType>>>>;
+    fn operator_id(&self) -> &T::OperatorId;
+    fn clone(&self) -> Box<dyn PhysicalOperator<T>>;
+    fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties<T>>]) -> Rc<PhysicalProperties<T>>;
+    fn required_properties(&self, input_prop: Rc<PhysicalProperties<T>>) -> Vec<Vec<Rc<PhysicalProperties<T>>>>;
     fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
         Cost::new()
     }
-    fn equal(&self, other: &dyn PhysicalOperator<OptimizerType = Self::OptimizerType>) -> bool;
+    fn equal(&self, other: &dyn PhysicalOperator<T>) -> bool;
 }
 
-impl<OT: OptimizerType> dyn PhysicalOperator<OptimizerType = OT> {
+impl<T: OptimizerType> dyn PhysicalOperator<T> {
     #[inline]
-    pub fn downcast_ref<T: PhysicalOperator>(&self) -> Option<&T> {
-        self.as_any().downcast_ref::<T>()
+    pub fn downcast_ref<P: PhysicalOperator<T>>(&self) -> Option<&P> {
+        self.as_any().downcast_ref::<P>()
     }
 }
 
-impl<T: OptimizerType> Clone for Box<dyn PhysicalOperator<OptimizerType = T>> {
+impl<T: OptimizerType> Clone for Box<dyn PhysicalOperator<T>> {
     fn clone(&self) -> Self {
         PhysicalOperator::clone(self.as_ref())
     }
@@ -56,7 +48,7 @@ impl<T: OptimizerType> Clone for Box<dyn PhysicalOperator<OptimizerType = T>> {
 #[derive(Clone, Debug)]
 pub enum Operator<T: OptimizerType> {
     Logical(Rc<dyn LogicalOperator<T>>),
-    Physical(Rc<dyn PhysicalOperator<OptimizerType = T>>),
+    Physical(Rc<dyn PhysicalOperator<T>>),
 }
 
 impl<T: OptimizerType> Operator<T> {
@@ -85,7 +77,7 @@ impl<T: OptimizerType> Operator<T> {
     }
 
     #[inline]
-    pub fn physical_op(&self) -> &Rc<dyn PhysicalOperator<OptimizerType = T>> {
+    pub fn physical_op(&self) -> &Rc<dyn PhysicalOperator<T>> {
         match self {
             Operator::Logical(_) => unreachable!("expect physical operator"),
             Operator::Physical(op) => op,
