@@ -19,9 +19,7 @@ impl ScanImplementation {
     }
 }
 
-impl cso_core::rule::Rule for ScanImplementation {
-    type OptimizerType = Demo;
-
+impl cso_core::rule::Rule<Demo> for ScanImplementation {
     fn name(&self) -> &str {
         "scan implementation"
     }

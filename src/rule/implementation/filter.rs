@@ -21,9 +21,7 @@ impl FilterImplementation {
     }
 }
 
-impl cso_core::rule::Rule for FilterImplementation {
-    type OptimizerType = Demo;
-
+impl cso_core::rule::Rule<Demo> for FilterImplementation {
     fn name(&self) -> &str {
         "filter implementation"
     }

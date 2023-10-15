@@ -23,9 +23,7 @@ impl ProjectImplementation {
     }
 }
 
-impl cso_core::rule::Rule for ProjectImplementation {
-    type OptimizerType = Demo;
-
+impl cso_core::rule::Rule<Demo> for ProjectImplementation {
     fn name(&self) -> &str {
         "project implementation"
     }

@@ -80,19 +80,13 @@ pub trait RuleId: Copy + PartialEq + Debug {
     fn as_usize(self) -> usize;
 }
 
-pub trait Rule: Any {
-    type OptimizerType: OptimizerType;
-
+pub trait Rule<T: OptimizerType>: Any {
     fn name(&self) -> &str;
-    fn rule_id(&self) -> <Self::OptimizerType as OptimizerType>::RuleId;
-    fn pattern(&self) -> &Pattern<Self::OptimizerType>;
-    fn transform(
-        &self,
-        input: &Plan<Self::OptimizerType>,
-        context: &mut OptimizerContext<Self::OptimizerType>,
-    ) -> Vec<Plan<Self::OptimizerType>>;
+    fn rule_id(&self) -> T::RuleId;
+    fn pattern(&self) -> &Pattern<T>;
+    fn transform(&self, input: &Plan<T>, context: &mut OptimizerContext<T>) -> Vec<Plan<T>>;
 
-    fn check(&self, _input: &Plan<Self::OptimizerType>, _context: &OptimizerContext<Self::OptimizerType>) -> bool {
+    fn check(&self, _input: &Plan<T>, _context: &OptimizerContext<T>) -> bool {
         true
     }
 
@@ -117,7 +111,7 @@ pub trait Rule: Any {
     }
 }
 
-pub type RuleRef<T> = Rc<dyn Rule<OptimizerType = T>>;
+pub type RuleRef<T> = Rc<dyn Rule<T>>;
 
 pub struct RuleSet<T: OptimizerType> {
     transform_rules: Vec<RuleRef<T>>,

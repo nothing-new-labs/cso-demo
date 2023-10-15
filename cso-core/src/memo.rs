@@ -59,7 +59,7 @@ impl<T: OptimizerType> GroupPlan<T> {
         &self.inputs
     }
 
-    pub fn is_rule_explored(&self, rule: &dyn Rule<OptimizerType = T>) -> bool {
+    pub fn is_rule_explored(&self, rule: &dyn Rule<T>) -> bool {
         self.rule_masks.contains(rule.rule_id().as_usize())
     }
 
