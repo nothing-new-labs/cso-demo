@@ -1,26 +1,26 @@
 use crate::memo::GroupPlanRef;
 use crate::rule::{Binding, RuleRef};
 use crate::task::{EnforceAndCostTask, OptimizePlanTask, Task, TaskRunner};
-use crate::OptimizerContext;
+use crate::{OptimizerContext, OptimizerType};
 
-pub struct ApplyRuleTask {
-    plan: GroupPlanRef,
-    rule: RuleRef,
+pub struct ApplyRuleTask<T: OptimizerType> {
+    plan: GroupPlanRef<T>,
+    rule: RuleRef<T>,
 }
 
-impl From<ApplyRuleTask> for Task {
+impl<T: OptimizerType> From<ApplyRuleTask<T>> for Task<T> {
     #[inline]
-    fn from(task: ApplyRuleTask) -> Self {
+    fn from(task: ApplyRuleTask<T>) -> Self {
         Task::ApplyRule(task)
     }
 }
 
-impl ApplyRuleTask {
-    pub const fn new(plan: GroupPlanRef, rule: RuleRef) -> Self {
+impl<T: OptimizerType> ApplyRuleTask<T> {
+    pub const fn new(plan: GroupPlanRef<T>, rule: RuleRef<T>) -> Self {
         ApplyRuleTask { plan, rule }
     }
 
-    pub(super) fn execute(self, task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
+    pub(super) fn execute(self, task_runner: &mut TaskRunner<T>, optimizer_ctx: &mut OptimizerContext<T>) {
         assert!(!self.plan.borrow().is_rule_explored(self.rule.as_ref()));
 
         let rule = self.rule.as_ref();

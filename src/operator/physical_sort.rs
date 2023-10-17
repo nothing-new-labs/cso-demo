@@ -1,7 +1,8 @@
 use crate::expression::ColumnVar;
-use crate::operator::PhysicalOperator;
+use crate::operator::{OperatorId, PhysicalOperator};
 use crate::property::sort_property::SortProperty;
 use crate::property::PhysicalProperties;
+use crate::Demo;
 use std::rc::Rc;
 
 #[derive(Clone, Hash, Eq, PartialEq, Debug)]
@@ -31,26 +32,26 @@ impl PhysicalSort {
     }
 }
 
-impl PhysicalOperator for PhysicalSort {
+impl cso_core::operator::PhysicalOperator<Demo> for PhysicalSort {
     fn name(&self) -> &str {
         "physical sort"
     }
 
-    fn operator_id(&self) -> i16 {
-        7
+    fn operator_id(&self) -> &OperatorId {
+        &OperatorId::PhysicalSort
     }
 
     fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
-        PhysicalProperties::with_sort_property(SortProperty::with_order(self.order_spec.clone()))
+        PhysicalProperties::with_property(Box::new(SortProperty::with_order(self.order_spec.clone())))
     }
 
     fn required_properties(&self, _input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
-        vec![vec![PhysicalProperties::with_sort_property(SortProperty::with_order(
-            self.order_spec.clone(),
+        vec![vec![PhysicalProperties::with_property(Box::new(
+            SortProperty::with_order(self.order_spec.clone()),
         ))]]
     }
 
-    fn equal(&self, other: &dyn PhysicalOperator) -> bool {
+    fn equal(&self, other: &PhysicalOperator) -> bool {
         match other.downcast_ref::<PhysicalSort>() {
             Some(other) => self.eq(other),
             None => false,

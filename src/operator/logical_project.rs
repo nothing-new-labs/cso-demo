@@ -1,7 +1,9 @@
-use crate::expression::ScalarExpression;
-use crate::metadata::md_accessor::MdAccessor;
-use crate::metadata::statistics::Stats;
-use crate::operator::LogicalOperator;
+use crate::metadata::MdAccessor;
+use crate::operator::OperatorId;
+use crate::Demo;
+use cso_core::expression::ScalarExpression;
+use cso_core::metadata::Stats;
+use cso_core::operator::LogicalOperator;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -19,13 +21,13 @@ impl LogicalProject {
     }
 }
 
-impl LogicalOperator for LogicalProject {
+impl LogicalOperator<Demo> for LogicalProject {
     fn name(&self) -> &str {
         "logical project"
     }
 
-    fn operator_id(&self) -> i16 {
-        3
+    fn operator_id(&self) -> &OperatorId {
+        &OperatorId::LogicalProject
     }
 
     fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {

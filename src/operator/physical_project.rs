@@ -1,6 +1,7 @@
-use crate::expression::ScalarExpression;
-use crate::operator::PhysicalOperator;
+use crate::operator::{OperatorId, PhysicalOperator};
 use crate::property::PhysicalProperties;
+use crate::Demo;
+use cso_core::expression::ScalarExpression;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -14,13 +15,13 @@ impl PhysicalProject {
     }
 }
 
-impl PhysicalOperator for PhysicalProject {
+impl cso_core::operator::PhysicalOperator<Demo> for PhysicalProject {
     fn name(&self) -> &str {
         "physical project"
     }
 
-    fn operator_id(&self) -> i16 {
-        6
+    fn operator_id(&self) -> &OperatorId {
+        &OperatorId::LogicalProject
     }
 
     fn derive_output_properties(&self, child_output_props: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
@@ -31,7 +32,7 @@ impl PhysicalOperator for PhysicalProject {
         vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
     }
 
-    fn equal(&self, other: &dyn PhysicalOperator) -> bool {
+    fn equal(&self, other: &PhysicalOperator) -> bool {
         match other.downcast_ref::<PhysicalProject>() {
             Some(other) => self.eq(other),
             None => false,

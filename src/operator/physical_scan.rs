@@ -1,7 +1,8 @@
 use crate::expression::ColumnVar;
 use crate::operator::logical_scan::TableDesc;
-use crate::operator::PhysicalOperator;
+use crate::operator::{OperatorId, PhysicalOperator};
 use crate::property::PhysicalProperties;
+use crate::Demo;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -19,13 +20,13 @@ impl PhysicalScan {
     }
 }
 
-impl PhysicalOperator for PhysicalScan {
+impl cso_core::operator::PhysicalOperator<Demo> for PhysicalScan {
     fn name(&self) -> &str {
         "physical scan"
     }
 
-    fn operator_id(&self) -> i16 {
-        4
+    fn operator_id(&self) -> &OperatorId {
+        &OperatorId::PhysicalScan
     }
 
     fn derive_output_properties(&self, _: &[Rc<PhysicalProperties>]) -> Rc<PhysicalProperties> {
@@ -36,7 +37,7 @@ impl PhysicalOperator for PhysicalScan {
         vec![vec![]]
     }
 
-    fn equal(&self, other: &dyn PhysicalOperator) -> bool {
+    fn equal(&self, other: &PhysicalOperator) -> bool {
         match other.downcast_ref::<PhysicalScan>() {
             Some(other) => self.eq(other),
             None => false,

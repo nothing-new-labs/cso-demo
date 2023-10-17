@@ -1,33 +1,33 @@
 use crate::memo::{GroupPlan, GroupPlanRef};
 use crate::rule::{RuleRef, RuleSet};
 use crate::task::{ApplyRuleTask, DeriveStatsTask, ExploreGroupTask, Task, TaskRunner};
-use crate::OptimizerContext;
+use crate::{OptimizerContext, OptimizerType};
 use std::ops::Deref;
 
-pub struct OptimizePlanTask {
-    plan: GroupPlanRef,
+pub struct OptimizePlanTask<T: OptimizerType> {
+    plan: GroupPlanRef<T>,
 }
 
-impl From<OptimizePlanTask> for Task {
+impl<T: OptimizerType> From<OptimizePlanTask<T>> for Task<T> {
     #[inline]
-    fn from(task: OptimizePlanTask) -> Self {
+    fn from(task: OptimizePlanTask<T>) -> Self {
         Task::OptimizePlan(task)
     }
 }
 
-impl OptimizePlanTask {
-    pub const fn new(plan: GroupPlanRef) -> Self {
+impl<T: OptimizerType> OptimizePlanTask<T> {
+    pub const fn new(plan: GroupPlanRef<T>) -> Self {
         OptimizePlanTask { plan }
     }
 
-    fn filter_invalid_rules(plan: &GroupPlan, candidate_rules: &[RuleRef], valid_rules: &mut Vec<RuleRef>) {
+    fn filter_invalid_rules(plan: &GroupPlan<T>, candidate_rules: &[RuleRef<T>], valid_rules: &mut Vec<RuleRef<T>>) {
         candidate_rules
             .iter()
             .filter(|rule| !plan.is_rule_explored(rule.as_ref()) && rule.pattern().match_without_child(plan))
             .for_each(|rule| valid_rules.push(rule.clone()));
     }
 
-    fn get_rules(&self, rule_set: &RuleSet) -> Vec<RuleRef> {
+    fn get_rules(&self, rule_set: &RuleSet<T>) -> Vec<RuleRef<T>> {
         let mut rules = Vec::new();
         let plan = self.plan.borrow();
 
@@ -40,7 +40,7 @@ impl OptimizePlanTask {
         rules
     }
 
-    pub(super) fn execute(self, task_runner: &mut TaskRunner, optimizer_ctx: &mut OptimizerContext) {
+    pub(super) fn execute(self, task_runner: &mut TaskRunner<T>, optimizer_ctx: &mut OptimizerContext<T>) {
         let rules = self.get_rules(optimizer_ctx.rule_set());
         for rule in rules {
             let apply_rule_task = ApplyRuleTask::new(self.plan.clone(), rule);

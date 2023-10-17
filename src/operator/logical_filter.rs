@@ -1,7 +1,9 @@
-use crate::expression::ScalarExpression;
-use crate::metadata::md_accessor::MdAccessor;
-use crate::metadata::statistics::Stats;
-use crate::operator::LogicalOperator;
+use crate::metadata::MdAccessor;
+use crate::operator::OperatorId;
+use crate::Demo;
+use cso_core::expression::ScalarExpression;
+use cso_core::metadata::Stats;
+use cso_core::operator::LogicalOperator;
 use std::rc::Rc;
 
 #[derive(Debug)]
@@ -20,13 +22,13 @@ impl LogicalFilter {
     }
 }
 
-impl LogicalOperator for LogicalFilter {
+impl LogicalOperator<Demo> for LogicalFilter {
     fn name(&self) -> &str {
         "logical filter"
     }
 
-    fn operator_id(&self) -> i16 {
-        2
+    fn operator_id(&self) -> &OperatorId {
+        &OperatorId::LogicalFilter
     }
 
     fn derive_statistics(&self, _md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {

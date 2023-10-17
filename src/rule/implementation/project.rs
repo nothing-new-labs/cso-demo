@@ -1,8 +1,10 @@
 use crate::operator::logical_project::LogicalProject;
 use crate::operator::physical_project::PhysicalProject;
-use crate::operator::Operator;
-use crate::rule::{Pattern, PatternType, Rule};
+use crate::operator::OperatorId;
+use crate::rule::RuleId;
+use crate::{Demo, Pattern, PatternType};
 use crate::{OptimizerContext, Plan};
+use cso_core::operator::Operator;
 use std::rc::Rc;
 use std::vec;
 
@@ -13,18 +15,21 @@ pub struct ProjectImplementation {
 impl ProjectImplementation {
     pub fn new() -> Self {
         ProjectImplementation {
-            pattern: Pattern::with_children(PatternType::LogicalOperator(3), vec![Pattern::new(PatternType::Leaf)]),
+            pattern: Pattern::with_children(
+                PatternType::Operator(OperatorId::LogicalProject),
+                vec![Pattern::new(PatternType::Leaf)],
+            ),
         }
     }
 }
 
-impl Rule for ProjectImplementation {
+impl cso_core::rule::Rule<Demo> for ProjectImplementation {
     fn name(&self) -> &str {
         "project implementation"
     }
 
-    fn rule_id(&self) -> u16 {
-        3
+    fn rule_id(&self) -> RuleId {
+        RuleId::ProjectImplementation
     }
 
     fn pattern(&self) -> &Pattern {
@@ -37,7 +42,11 @@ impl Rule for ProjectImplementation {
         vec![Plan::new(
             Operator::Physical(Rc::new(physical_project)),
             input.inputs().to_vec(),
-            input.group_plan.clone(),
+            input.group_plan().cloned(),
         )]
+    }
+
+    fn is_implementation(&self) -> bool {
+        true
     }
 }

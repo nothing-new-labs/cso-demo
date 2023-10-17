@@ -1,7 +1,10 @@
-use crate::memo::{GroupPlan, GroupRef};
 use crate::operator::physical_sort::{OrderSpec, PhysicalSort};
-use crate::operator::Operator;
-use crate::property::{PhysicalProperty, Property};
+use crate::property::PhysicalProperty;
+use crate::Demo;
+use crate::{GroupPlan, GroupRef};
+use cso_core::operator::Operator;
+use cso_core::property::Property;
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 #[derive(Clone, Hash, Eq, PartialEq, Debug)]
@@ -11,7 +14,25 @@ pub struct SortProperty {
 
 impl Property for SortProperty {}
 
-impl PhysicalProperty for SortProperty {
+impl cso_core::property::PhysicalProperty<Demo> for SortProperty {
+    fn hash(&self, mut hasher: &mut dyn Hasher) {
+        Hash::hash(self, &mut hasher)
+    }
+
+    fn equal(&self, other: &PhysicalProperty) -> bool {
+        match other.downcast_ref::<SortProperty>() {
+            Some(property) => self.eq(property),
+            None => false,
+        }
+    }
+
+    fn satisfy(&self, other: &PhysicalProperty) -> bool {
+        match other.downcast_ref::<SortProperty>() {
+            Some(property) => self.satisfy(property),
+            None => false,
+        }
+    }
+
     fn make_enforcer(&self, group: GroupRef) -> GroupPlan {
         let physical_sort = PhysicalSort::new(self.order_spec.clone());
         GroupPlan::new(Operator::Physical(Rc::new(physical_sort)), vec![group])
