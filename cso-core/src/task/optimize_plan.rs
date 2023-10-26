@@ -1,11 +1,14 @@
 use crate::memo::{GroupPlan, GroupPlanRef};
+use crate::property::PhysicalProperties;
 use crate::rule::{RuleRef, RuleSet};
 use crate::task::{ApplyRuleTask, DeriveStatsTask, ExploreGroupTask, Task, TaskRunner};
 use crate::{OptimizerContext, OptimizerType};
 use std::ops::Deref;
+use std::rc::Rc;
 
 pub struct OptimizePlanTask<T: OptimizerType> {
     plan: GroupPlanRef<T>,
+    required_prop: Rc<PhysicalProperties<T>>,
 }
 
 impl<T: OptimizerType> From<OptimizePlanTask<T>> for Task<T> {
@@ -16,8 +19,8 @@ impl<T: OptimizerType> From<OptimizePlanTask<T>> for Task<T> {
 }
 
 impl<T: OptimizerType> OptimizePlanTask<T> {
-    pub const fn new(plan: GroupPlanRef<T>) -> Self {
-        OptimizePlanTask { plan }
+    pub const fn new(plan: GroupPlanRef<T>, required_prop: Rc<PhysicalProperties<T>>) -> Self {
+        OptimizePlanTask { plan, required_prop }
     }
 
     fn filter_invalid_rules(plan: &GroupPlan<T>, candidate_rules: &[RuleRef<T>], valid_rules: &mut Vec<RuleRef<T>>) {
@@ -43,7 +46,7 @@ impl<T: OptimizerType> OptimizePlanTask<T> {
     pub(super) fn execute(self, task_runner: &mut TaskRunner<T>, optimizer_ctx: &mut OptimizerContext<T>) {
         let rules = self.get_rules(optimizer_ctx.rule_set());
         for rule in rules {
-            let apply_rule_task = ApplyRuleTask::new(self.plan.clone(), rule);
+            let apply_rule_task = ApplyRuleTask::new(self.plan.clone(), rule, self.required_prop.clone());
             task_runner.push_task(apply_rule_task);
         }
 
@@ -53,7 +56,7 @@ impl<T: OptimizerType> OptimizePlanTask<T> {
         let group_plan = self.plan.borrow();
 
         for group in group_plan.inputs().iter().rev() {
-            let task = ExploreGroupTask::new(group.clone());
+            let task = ExploreGroupTask::new(group.clone(), self.required_prop.clone());
             task_runner.push_task(task);
         }
     }

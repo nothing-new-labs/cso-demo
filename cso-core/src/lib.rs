@@ -139,7 +139,7 @@ impl<T: OptimizerType> Optimizer<T> {
         md_accessor: MdAccessor<T>,
         rule_set: RuleSet<T>,
     ) -> PhysicalPlan<T> {
-        let mut optimizer_ctx = OptimizerContext::new(md_accessor, required_properties.clone(), rule_set);
+        let mut optimizer_ctx = OptimizerContext::new(md_accessor, rule_set);
         optimizer_ctx.memo_mut().init(plan);
         let mut task_runner = TaskRunner::new();
         let initial_task =
@@ -154,16 +154,14 @@ pub struct OptimizerContext<T: OptimizerType> {
     memo: Memo<T>,
     rule_set: RuleSet<T>,
     md_accessor: MdAccessor<T>,
-    required_properties: Rc<PhysicalProperties<T>>,
 }
 
 impl<T: OptimizerType> OptimizerContext<T> {
-    fn new(md_accessor: MdAccessor<T>, required_properties: Rc<PhysicalProperties<T>>, rule_set: RuleSet<T>) -> Self {
+    fn new(md_accessor: MdAccessor<T>, rule_set: RuleSet<T>) -> Self {
         OptimizerContext {
             memo: Memo::new(),
             md_accessor,
             rule_set,
-            required_properties,
         }
     }
 
@@ -185,9 +183,5 @@ impl<T: OptimizerType> OptimizerContext<T> {
 
     pub fn md_accessor(&self) -> &MdAccessor<T> {
         &self.md_accessor
-    }
-
-    pub fn required_properties(&self) -> &Rc<PhysicalProperties<T>> {
-        &self.required_properties
     }
 }

@@ -1,11 +1,14 @@
 use crate::memo::GroupPlanRef;
+use crate::property::PhysicalProperties;
 use crate::rule::{Binding, RuleRef};
 use crate::task::{EnforceAndCostTask, OptimizePlanTask, Task, TaskRunner};
 use crate::{OptimizerContext, OptimizerType};
+use std::rc::Rc;
 
 pub struct ApplyRuleTask<T: OptimizerType> {
     plan: GroupPlanRef<T>,
     rule: RuleRef<T>,
+    required_prop: Rc<PhysicalProperties<T>>,
 }
 
 impl<T: OptimizerType> From<ApplyRuleTask<T>> for Task<T> {
@@ -16,8 +19,12 @@ impl<T: OptimizerType> From<ApplyRuleTask<T>> for Task<T> {
 }
 
 impl<T: OptimizerType> ApplyRuleTask<T> {
-    pub const fn new(plan: GroupPlanRef<T>, rule: RuleRef<T>) -> Self {
-        ApplyRuleTask { plan, rule }
+    pub const fn new(plan: GroupPlanRef<T>, rule: RuleRef<T>, required_prop: Rc<PhysicalProperties<T>>) -> Self {
+        ApplyRuleTask {
+            plan,
+            rule,
+            required_prop,
+        }
     }
 
     pub(super) fn execute(self, task_runner: &mut TaskRunner<T>, optimizer_ctx: &mut OptimizerContext<T>) {
@@ -42,11 +49,9 @@ impl<T: OptimizerType> ApplyRuleTask<T> {
         for plan in new_plans {
             let group_plan = optimizer_ctx.memo_mut().copy_in_plan(Some(curr_group.clone()), &plan);
             if group_plan.borrow().operator().is_logical() {
-                task_runner.push_task(OptimizePlanTask::new(group_plan));
+                task_runner.push_task(OptimizePlanTask::new(group_plan, self.required_prop.clone()));
             } else {
-                // todo: get `required_prop` from curr_group
-                let required_prop = optimizer_ctx.required_properties();
-                let new_task = EnforceAndCostTask::new(group_plan, required_prop.clone());
+                let new_task = EnforceAndCostTask::new(group_plan, self.required_prop.clone());
                 task_runner.push_task(new_task);
             }
         }
