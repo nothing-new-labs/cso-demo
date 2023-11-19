@@ -26,7 +26,7 @@ impl<T: OptimizerType> OptimizeGroupTask<T> {
 
         if !group.is_explored() {
             for plan in group.logical_plans().iter().rev() {
-                let task = OptimizePlanTask::new(plan.clone());
+                let task = OptimizePlanTask::new(plan.clone(), self.required_prop.clone());
                 task_runner.push_task(task);
             }
             group.set_explored();
