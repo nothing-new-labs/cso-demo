@@ -13,5 +13,5 @@ publish = false
 [dependencies]
 bit-set = "0.5.3"
 dyn-clonable = "0.9.0"
-typetag = "0.2.12"
-serde = { version = "1.0.179", features = ["derive"]}
+typetag = "0.2.13"
+serde = { version = "1.0.193", features = ["derive"]}

@@ -28,7 +28,7 @@ fn logical_scan() -> LogicalPlan {
 }
 
 fn logical_filter(input: Vec<LogicalPlan>) -> LogicalPlan {
-    let predicate = IsNull::new(ColumnVar::new(0));
+    let predicate = IsNull::new(Box::new(ColumnVar::new(0)));
     let filter = LogicalFilter::new(Rc::new(predicate));
     LogicalPlan::new(Rc::new(filter), input, vec![])
 }
@@ -107,7 +107,7 @@ fn expected_physical_plan() -> PhysicalPlan {
     let scan = PhysicalScan::new(table_desc, output_columns);
     let scan = PhysicalPlan::new(Rc::new(scan), vec![]);
 
-    let predicate = IsNull::new(ColumnVar::new(0));
+    let predicate = IsNull::new(Box::new(ColumnVar::new(0)));
     let filter = PhysicalFilter::new(Rc::new(predicate));
     let filter = PhysicalPlan::new(Rc::new(filter), vec![scan]);
 
