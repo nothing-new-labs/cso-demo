@@ -141,7 +141,7 @@ impl<T: OptimizerType> RuleSet<T> {
 
     pub fn set_implement_rules(&mut self, rules: Vec<RuleRef<T>>) {
         assert!(rules.iter().all(|x| { x.is_implementation() }));
-        self.transform_rules = rules;
+        self.implement_rules = rules;
     }
 }
 
