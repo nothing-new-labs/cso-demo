@@ -64,12 +64,10 @@ impl Histogram {
     }
 }
 
-pub type ColumnIndex = usize;
-
 /// Statistics information of a column
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ColumnStats {
-    col_idx: ColumnIndex,
+    col_id: usize,
     name: String,
     min: Datum,                   // Min value of the column
     max: Datum,                   // Max value of the column
@@ -79,7 +77,7 @@ pub struct ColumnStats {
 
 impl ColumnStats {
     pub const fn new(
-        col_idx: ColumnIndex,
+        col_id: usize,
         name: String,
         min: Datum,
         max: Datum,
@@ -87,17 +85,13 @@ impl ColumnStats {
         histogram: Option<Histogram>,
     ) -> Self {
         Self {
-            col_idx,
+            col_id,
             name,
             min,
             max,
             null_count,
             histogram,
         }
-    }
-
-    pub fn column_index(&self) -> ColumnIndex {
-        self.col_idx
     }
 
     pub fn name(&self) -> &str {
@@ -232,19 +226,30 @@ impl ColumnMetadata {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IndexInfo {
+    mdid: u64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RelationMetadata {
     name: String,
     column_metadata: Vec<ColumnMetadata>,
     rel_stats_mdid: u64,
+    index_info_list: Vec<IndexInfo>,
 }
 
 impl RelationMetadata {
-    #[allow(clippy::too_many_arguments)]
-    pub const fn new(name: String, column_metadata: Vec<ColumnMetadata>, rel_stats_mdid: u64) -> Self {
+    pub const fn new(
+        name: String,
+        column_metadata: Vec<ColumnMetadata>,
+        rel_stats_mdid: u64,
+        index_info_list: Vec<IndexInfo>,
+    ) -> Self {
         Self {
             name,
             column_metadata,
             rel_stats_mdid,
+            index_info_list,
         }
     }
 
@@ -259,7 +264,32 @@ impl RelationMetadata {
     pub fn rel_stats_mdid(&self) -> u64 {
         self.rel_stats_mdid
     }
+
+    pub fn index_count(&self) -> usize {
+        self.index_info_list.len()
+    }
+
+    pub fn index_mdid(&self, id: usize) -> Option<u64> {
+        self.index_info_list.get(id).map(|index| index.mdid)
+    }
 }
 
 #[typetag::serde]
 impl Metadata for RelationMetadata {}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+enum IndexType {
+    Btree,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IndexMd {
+    mdid: u64,
+    index_name: String,
+    index_type: IndexType,
+    key_cols: Vec<usize>,
+    included_cols: Vec<usize>,
+}
+
+#[typetag::serde]
+impl Metadata for IndexMd {}

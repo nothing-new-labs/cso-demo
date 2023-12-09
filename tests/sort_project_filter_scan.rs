@@ -73,7 +73,7 @@ fn md_cache() -> MdCache {
         ColumnMetadata::new("cmin".to_string(), 5, false, 4, Datum::I32(0)),
         ColumnMetadata::new("xmax".to_string(), 6, false, 4, Datum::I32(0)),
     ];
-    let relation_md = RelationMetadata::new("x".to_string(), column_md, relation_stats_id);
+    let relation_md = RelationMetadata::new("x".to_string(), column_md, relation_stats_id, vec![]);
     let boxed_relation_md = Box::new(relation_md.clone()) as Box<dyn Metadata>;
 
     // column stats
