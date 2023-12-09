@@ -67,7 +67,7 @@ impl Histogram {
 /// Statistics information of a column
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct ColumnStats {
-    col_idx: usize,
+    col_id: usize,
     name: String,
     min: Datum,                   // Min value of the column
     max: Datum,                   // Max value of the column
@@ -77,7 +77,7 @@ pub struct ColumnStats {
 
 impl ColumnStats {
     pub const fn new(
-        col_idx: usize,
+        col_id: usize,
         name: String,
         min: Datum,
         max: Datum,
@@ -85,17 +85,13 @@ impl ColumnStats {
         histogram: Option<Histogram>,
     ) -> Self {
         Self {
-            col_idx,
+            col_id,
             name,
             min,
             max,
             null_count,
             histogram,
         }
-    }
-
-    pub fn column_index(&self) -> usize {
-        self.col_idx
     }
 
     pub fn name(&self) -> &str {
@@ -232,7 +228,6 @@ impl ColumnMetadata {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct IndexInfo {
     mdid: u64,
-    is_partial: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -285,7 +280,6 @@ impl Metadata for RelationMetadata {}
 #[derive(Clone, Debug, Serialize, Deserialize)]
 enum IndexType {
     Btree,
-    Bitmap,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
