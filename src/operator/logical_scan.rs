@@ -17,7 +17,7 @@ impl TableDesc {
         Self { md_id }
     }
 
-    fn md_id(&self) -> u64 {
+    pub fn md_id(&self) -> u64 {
         self.md_id
     }
 }
@@ -43,39 +43,43 @@ impl LogicalScan {
     pub fn output_columns(&self) -> &[ColumnVar] {
         &self.output_columns
     }
+}
 
-    fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {
-        debug_assert!(input_stats.is_empty());
+pub fn derive_scan_stats(
+    md_accessor: &MdAccessor,
+    input_stats: &[Rc<dyn Stats>],
+    table_desc: &TableDesc,
+) -> Rc<dyn Stats> {
+    debug_assert!(input_stats.is_empty());
 
-        let relation_md_id = self.table_desc.md_id();
-        let rel_md = md_accessor
-            .retrieve_metadata(&relation_md_id)
+    let relation_md_id = table_desc.md_id();
+    let rel_md = md_accessor
+        .retrieve_metadata(&relation_md_id)
+        .expect("Missing metadata");
+    let rel_md = rel_md
+        .downcast_ref::<RelationMetadata>()
+        .expect("RelationMetadata expected");
+
+    let rel_stats_md_id = rel_md.rel_stats_mdid();
+    let rel_stats = md_accessor
+        .retrieve_metadata(&rel_stats_md_id)
+        .expect("Missing metadata");
+    let rel_stats = rel_stats
+        .downcast_ref::<RelationStats>()
+        .expect("RelationStats expected");
+
+    let output_row_count = rel_stats.rows();
+
+    let mut column_stats = Vec::new();
+    for col_stats_md_id in rel_stats.col_stat_mdids() {
+        let col_stats = md_accessor
+            .retrieve_metadata(col_stats_md_id)
             .expect("Missing metadata");
-        let rel_md = rel_md
-            .downcast_ref::<RelationMetadata>()
-            .expect("RelationMetadata expected");
-
-        let rel_stats_md_id = rel_md.rel_stats_mdid();
-        let rel_stats = md_accessor
-            .retrieve_metadata(&rel_stats_md_id)
-            .expect("Missing metadata");
-        let rel_stats = rel_stats
-            .downcast_ref::<RelationStats>()
-            .expect("RelationStats expected");
-
-        let output_row_count = rel_stats.rows();
-
-        let mut column_stats = Vec::new();
-        for col_stats_md_id in rel_stats.col_stat_mdids() {
-            let col_stats = md_accessor
-                .retrieve_metadata(col_stats_md_id)
-                .expect("Missing metadata");
-            column_stats.push(col_stats);
-        }
-
-        let stats = Statistics::new(output_row_count, column_stats);
-        Rc::new(stats)
+        column_stats.push(col_stats);
     }
+
+    let stats = Statistics::new(output_row_count, column_stats);
+    Rc::new(stats)
 }
 
 impl LogicalOperator<Demo> for LogicalScan {
@@ -88,6 +92,6 @@ impl LogicalOperator<Demo> for LogicalScan {
     }
 
     fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {
-        self.derive_statistics(md_accessor, input_stats)
+        derive_scan_stats(md_accessor, input_stats, self.table_desc())
     }
 }

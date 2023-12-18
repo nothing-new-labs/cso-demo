@@ -1,5 +1,4 @@
 use crate::datum::Datum;
-use cso_core::any::AsAny;
 use cso_core::metadata::Metadata;
 use cso_core::metadata::Stats;
 use serde::{Deserialize, Serialize};
@@ -141,7 +140,7 @@ impl Statistics {
 
 impl Stats for Statistics {
     fn should_update(&self, new_stats: &Rc<dyn Stats>) -> bool {
-        let new_stats = new_stats.as_any().downcast_ref::<Statistics>().unwrap();
+        let new_stats = new_stats.as_ref().as_any().downcast_ref::<Statistics>().unwrap();
         new_stats.output_row_count < self.output_row_count
     }
 }
@@ -230,6 +229,12 @@ pub struct IndexInfo {
     mdid: u64,
 }
 
+impl IndexInfo {
+    pub fn new(mdid: u64) -> Self {
+        Self { mdid }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RelationMetadata {
     name: String,
@@ -269,16 +274,16 @@ impl RelationMetadata {
         self.index_info_list.len()
     }
 
-    pub fn index_mdid(&self, id: usize) -> Option<u64> {
-        self.index_info_list.get(id).map(|index| index.mdid)
+    pub fn index_mdid(&self, id: usize) -> u64 {
+        self.index_info_list[id].mdid
     }
 }
 
 #[typetag::serde]
 impl Metadata for RelationMetadata {}
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-enum IndexType {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum IndexType {
     Btree,
 }
 
@@ -287,8 +292,28 @@ pub struct IndexMd {
     mdid: u64,
     index_name: String,
     index_type: IndexType,
-    key_cols: Vec<usize>,
-    included_cols: Vec<usize>,
+}
+
+impl IndexMd {
+    pub fn new(mdid: u64, index_name: String) -> Self {
+        Self {
+            mdid,
+            index_name,
+            index_type: IndexType::Btree,
+        }
+    }
+
+    pub fn mdid(&self) -> u64 {
+        self.mdid
+    }
+
+    pub fn index_name(&self) -> &str {
+        &self.index_name
+    }
+
+    pub fn index_type(&self) -> &IndexType {
+        &self.index_type
+    }
 }
 
 #[typetag::serde]

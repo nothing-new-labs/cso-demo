@@ -3,8 +3,8 @@
 pub struct Cost(f64);
 
 impl Cost {
-    pub const fn new() -> Cost {
-        Cost(0.0)
+    pub const fn new(val: f64) -> Cost {
+        Cost(val)
     }
 
     pub fn value(&self) -> f64 {
