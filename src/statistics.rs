@@ -292,6 +292,8 @@ pub struct IndexMd {
     mdid: u64,
     index_name: String,
     index_type: IndexType,
+    key_columns: Vec<usize>,
+    included_columns: Vec<usize>,
 }
 
 impl IndexMd {
@@ -300,6 +302,8 @@ impl IndexMd {
             mdid,
             index_name,
             index_type: IndexType::Btree,
+            key_columns: vec![],
+            included_columns: vec![],
         }
     }
 
