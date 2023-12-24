@@ -3,7 +3,7 @@ use cso_core::expression::ScalarExpression;
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
 #[repr(transparent)]
 pub struct ColumnVar {
-    id: i32,
+    id: i32, // global column id
 }
 
 impl ColumnVar {

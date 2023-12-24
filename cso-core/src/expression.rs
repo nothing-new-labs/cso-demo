@@ -9,6 +9,10 @@ pub trait ScalarExpression: AsAny + Debug + Clone {
     }
 
     fn equal(&self, other: &dyn ScalarExpression) -> bool;
+
+    fn derive_used_columns(&self) {
+        // todo!()
+    }
 }
 
 impl dyn ScalarExpression {

@@ -93,5 +93,6 @@ impl Rule<Demo> for Filter2IndexScan {
 }
 
 fn index_matched(_index_md: &IndexMd, _predicate: &dyn ScalarExpression) -> (bool, Option<Rc<dyn ScalarExpression>>) {
+    // todo!()
     (true, None)
 }
