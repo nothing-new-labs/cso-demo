@@ -20,6 +20,7 @@ use crate::operator::{LogicalOperator, Operator, PhysicalOperator};
 use crate::property::{LogicalProperties, PhysicalProperties};
 use crate::rule::{RuleId, RuleSet};
 use crate::task::{OptimizeGroupTask, TaskRunner};
+use bit_set::BitSet;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -183,5 +184,42 @@ impl<T: OptimizerType> OptimizerContext<T> {
 
     pub fn md_accessor(&self) -> &MdAccessor<T> {
         &self.md_accessor
+    }
+}
+
+#[repr(transparent)]
+pub struct ColumnRefSet {
+    bit_set: BitSet,
+}
+
+impl ColumnRefSet {
+    pub fn new() -> Self {
+        ColumnRefSet { bit_set: BitSet::new() }
+    }
+
+    pub fn with_id(id: u32) -> ColumnRefSet {
+        let mut col_set = ColumnRefSet::new();
+        col_set.insert(id);
+        col_set
+    }
+
+    pub fn contains(&self, id: u32) -> bool {
+        self.bit_set.contains(id as usize)
+    }
+
+    pub fn insert(&mut self, id: u32) -> bool {
+        self.bit_set.insert(id as usize)
+    }
+
+    pub fn remove(&mut self, id: u32) -> bool {
+        self.bit_set.remove(id as usize)
+    }
+
+    pub fn is_disjoint(&self, other: &Self) -> bool {
+        self.bit_set.is_disjoint(&other.bit_set)
+    }
+
+    pub fn is_superset(&self, other: &Self) -> bool {
+        self.bit_set.is_superset(&other.bit_set)
     }
 }

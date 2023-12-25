@@ -1,4 +1,5 @@
 use cso_core::expression::ScalarExpression;
+use cso_core::ColumnRefSet;
 
 #[derive(Debug, Clone)]
 pub struct Equal {
@@ -30,6 +31,11 @@ impl ScalarExpression for Equal {
             Some(other) => self.left.eq(&other.left) && self.right.eq(&other.right),
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.left.derive_used_columns(col_set);
+        self.right.derive_used_columns(col_set);
     }
 }
 
@@ -64,6 +70,11 @@ impl ScalarExpression for NotEqual {
             None => false,
         }
     }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.left.derive_used_columns(col_set);
+        self.right.derive_used_columns(col_set);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -96,6 +107,11 @@ impl ScalarExpression for GreaterThan {
             Some(other) => self.left.eq(&other.left) && self.right.eq(&other.right),
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.left.derive_used_columns(col_set);
+        self.right.derive_used_columns(col_set);
     }
 }
 
@@ -130,6 +146,11 @@ impl ScalarExpression for LessThan {
             None => false,
         }
     }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.left.derive_used_columns(col_set);
+        self.right.derive_used_columns(col_set);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -163,6 +184,11 @@ impl ScalarExpression for GreaterThanEqual {
             None => false,
         }
     }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.left.derive_used_columns(col_set);
+        self.right.derive_used_columns(col_set);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -195,5 +221,10 @@ impl ScalarExpression for LessThanEqual {
             Some(other) => self.left.eq(&other.left) && self.right.eq(&other.right),
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.left.derive_used_columns(col_set);
+        self.right.derive_used_columns(col_set);
     }
 }

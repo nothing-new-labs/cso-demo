@@ -1,17 +1,18 @@
 use cso_core::expression::ScalarExpression;
+use cso_core::ColumnRefSet;
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
 #[repr(transparent)]
 pub struct ColumnVar {
-    id: i32, // global column id
+    id: u32, // global column id
 }
 
 impl ColumnVar {
-    pub fn new(id: i32) -> Self {
+    pub fn new(id: u32) -> Self {
         ColumnVar { id }
     }
 
-    pub fn id(&self) -> i32 {
+    pub fn id(&self) -> u32 {
         self.id
     }
 }
@@ -22,5 +23,9 @@ impl ScalarExpression for ColumnVar {
             Some(other) => self.id() == other.id(),
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        col_set.insert(self.id);
     }
 }

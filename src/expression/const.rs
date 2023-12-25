@@ -1,4 +1,5 @@
 use cso_core::expression::ScalarExpression;
+use cso_core::ColumnRefSet;
 
 #[derive(Clone, Eq, Hash, PartialEq, Debug)]
 pub enum Const {
@@ -13,5 +14,9 @@ impl ScalarExpression for Const {
             Some(other) => self == other,
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, _col_set: &mut ColumnRefSet) {
+        // no column
     }
 }
