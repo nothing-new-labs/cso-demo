@@ -27,9 +27,7 @@ pub trait PhysicalOperator<T: OptimizerType>: AsAny + Clone + Debug {
     fn operator_id(&self) -> &T::OperatorId;
     fn derive_output_properties(&self, child_props: &[Rc<PhysicalProperties<T>>]) -> Rc<PhysicalProperties<T>>;
     fn required_properties(&self, input_prop: Rc<PhysicalProperties<T>>) -> Vec<Vec<Rc<PhysicalProperties<T>>>>;
-    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new()
-    }
+    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost;
     fn equal(&self, other: &dyn PhysicalOperator<T>) -> bool;
 }
 

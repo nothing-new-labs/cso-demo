@@ -3,6 +3,8 @@ use crate::operator::logical_scan::TableDesc;
 use crate::operator::{OperatorId, PhysicalOperator};
 use crate::property::PhysicalProperties;
 use crate::Demo;
+use cso_core::cost::Cost;
+use cso_core::metadata::Stats;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -35,6 +37,10 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalScan {
 
     fn required_properties(&self, _input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
         vec![vec![]]
+    }
+
+    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
+        Cost::new(1.0)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {

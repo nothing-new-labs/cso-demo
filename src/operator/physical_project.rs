@@ -1,7 +1,9 @@
 use crate::operator::{OperatorId, PhysicalOperator};
 use crate::property::PhysicalProperties;
 use crate::Demo;
+use cso_core::cost::Cost;
 use cso_core::expression::ScalarExpression;
+use cso_core::metadata::Stats;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -30,6 +32,10 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalProject {
 
     fn required_properties(&self, input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
         vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
+    }
+
+    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
+        Cost::new(1.0)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {
