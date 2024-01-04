@@ -1,4 +1,5 @@
 use cso_core::expression::ScalarExpression;
+use cso_core::ColumnRefSet;
 
 #[derive(Debug, Clone)]
 pub struct And {
@@ -18,6 +19,10 @@ impl ScalarExpression for And {
             Some(other) => self.expressions == other.expressions,
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.expressions.iter().for_each(|e| e.derive_used_columns(col_set));
     }
 }
 
@@ -40,6 +45,10 @@ impl ScalarExpression for Or {
             None => false,
         }
     }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.expressions.iter().for_each(|e| e.derive_used_columns(col_set));
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -60,5 +69,9 @@ impl ScalarExpression for Not {
             Some(other) => self.expression.eq(&other.expression),
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.expression.derive_used_columns(col_set);
     }
 }

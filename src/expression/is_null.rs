@@ -1,4 +1,5 @@
 use cso_core::expression::ScalarExpression;
+use cso_core::ColumnRefSet;
 
 #[derive(Clone, Debug)]
 pub struct IsNull {
@@ -21,6 +22,10 @@ impl ScalarExpression for IsNull {
             Some(other) => self.inner.eq(&other.inner),
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.inner.derive_used_columns(col_set);
     }
 }
 
@@ -45,5 +50,9 @@ impl ScalarExpression for IsNotNull {
             Some(other) => self.inner.eq(&other.inner),
             None => false,
         }
+    }
+
+    fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
+        self.inner.derive_used_columns(col_set);
     }
 }
