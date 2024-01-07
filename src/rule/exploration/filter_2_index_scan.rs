@@ -1,3 +1,4 @@
+use crate::expression::And;
 use crate::operator::logical_filter::LogicalFilter;
 use crate::operator::logical_index_scan::LogicalIndexScan;
 use crate::operator::logical_scan::LogicalScan;
@@ -8,6 +9,7 @@ use crate::{Demo, OptimizerContext, Pattern, Plan};
 use cso_core::expression::ScalarExpression;
 use cso_core::operator::Operator;
 use cso_core::rule::{PatternType, Rule};
+use cso_core::ColumnRefSet;
 use std::rc::Rc;
 
 pub struct Filter2IndexScan {
@@ -76,8 +78,7 @@ impl Rule<Demo> for Filter2IndexScan {
                 );
                 let mut new_plan = Plan::new(Operator::Logical(Rc::new(logical_index_scan)), vec![], None);
 
-                if let Some(residual_predicate) = residual_predicate {
-                    let new_logical_filter = LogicalFilter::new(residual_predicate);
+                if let Some(new_logical_filter) = residual_predicate {
                     new_plan = Plan::new(Operator::Logical(Rc::new(new_logical_filter)), vec![new_plan], None);
                 }
 
@@ -92,7 +93,34 @@ impl Rule<Demo> for Filter2IndexScan {
     }
 }
 
-fn index_matched(_index_md: &IndexMd, _predicate: &dyn ScalarExpression) -> (bool, Option<Rc<dyn ScalarExpression>>) {
-    // todo!()
-    (true, None)
+fn index_matched(index_md: &IndexMd, predicate: &dyn ScalarExpression) -> (bool, Option<LogicalFilter>) {
+    let mut predicate_include_columns = ColumnRefSet::new();
+    predicate.derive_used_columns(&mut predicate_include_columns);
+    let mut index_include_columns = ColumnRefSet::new();
+    for index_key in index_md.included_columns() {
+        index_key.derive_used_columns(&mut index_include_columns);
+    }
+    // index type is only btree now, so no need to judge
+    if predicate_include_columns.is_superset(&index_include_columns) {
+        (true, None)
+    } else {
+        // split predicates into index part and not index part
+        let mut residual_predicate = Vec::new();
+        let mut applicable = false;
+        for expression in predicate.split_predicates() {
+            let mut predicate_include_columns = ColumnRefSet::new();
+            expression.derive_used_columns(&mut predicate_include_columns);
+            if index_include_columns.is_disjoint(&predicate_include_columns) {
+                residual_predicate.push(expression);
+            } else {
+                applicable = true;
+            }
+        }
+        if applicable {
+            let new_logical_filter = LogicalFilter::new(Rc::new(And::new(residual_predicate)));
+            (applicable, Some(new_logical_filter))
+        } else {
+            (false, None)
+        }
+    }
 }

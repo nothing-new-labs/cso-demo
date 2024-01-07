@@ -28,4 +28,8 @@ impl ScalarExpression for ColumnVar {
     fn derive_used_columns(&self, col_set: &mut ColumnRefSet) {
         col_set.insert(self.id);
     }
+
+    fn split_predicates(&self) -> Vec<Box<dyn ScalarExpression>> {
+        Vec::new()
+    }
 }

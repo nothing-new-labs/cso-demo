@@ -12,6 +12,8 @@ pub trait ScalarExpression: AsAny + Debug + Clone {
     fn equal(&self, other: &dyn ScalarExpression) -> bool;
 
     fn derive_used_columns(&self, col_set: &mut ColumnRefSet);
+
+    fn split_predicates(&self) -> Vec<Box<dyn ScalarExpression>>;
 }
 
 impl dyn ScalarExpression {

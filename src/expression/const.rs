@@ -19,4 +19,8 @@ impl ScalarExpression for Const {
     fn derive_used_columns(&self, _col_set: &mut ColumnRefSet) {
         // no column
     }
+
+    fn split_predicates(&self) -> Vec<Box<dyn ScalarExpression>> {
+        Vec::new()
+    }
 }
