@@ -135,8 +135,7 @@ fn expected_physical_plan() -> PhysicalPlan {
     let order = OrderSpec {
         order_desc: vec![Ordering::new(2)],
     };
-    let sort = PhysicalPlan::new(Rc::new(PhysicalSort::new(order)), vec![project]);
-    sort
+    PhysicalPlan::new(Rc::new(PhysicalSort::new(order)), vec![project])
 }
 
 #[test]
