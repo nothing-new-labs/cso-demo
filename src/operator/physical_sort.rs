@@ -14,6 +14,16 @@ pub struct Ordering {
     pub nulls_first: bool,
 }
 
+impl Ordering {
+    pub fn new(id: u32) -> Self {
+        Self {
+            key: ColumnVar::new(id),
+            ascending: true,
+            nulls_first: true,
+        }
+    }
+}
+
 #[derive(Clone, Hash, Eq, PartialEq, Debug)]
 pub struct OrderSpec {
     pub order_desc: Vec<Ordering>,
@@ -54,7 +64,7 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalSort {
     }
 
     fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new(1.0)
+        Cost::new(2.0)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {

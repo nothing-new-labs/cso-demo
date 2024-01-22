@@ -297,13 +297,13 @@ pub struct IndexMd {
 }
 
 impl IndexMd {
-    pub fn new(mdid: u64, index_name: String) -> Self {
+    pub fn new(mdid: u64, index_name: String, key_columns: Vec<usize>, included_columns: Vec<usize>) -> Self {
         Self {
             mdid,
             index_name,
             index_type: IndexType::Btree,
-            key_columns: vec![],
-            included_columns: vec![],
+            key_columns,
+            included_columns,
         }
     }
 
@@ -317,6 +317,14 @@ impl IndexMd {
 
     pub fn index_type(&self) -> &IndexType {
         &self.index_type
+    }
+
+    pub fn key_columns(&self) -> &[usize] {
+        &self.key_columns
+    }
+
+    pub fn included_columns(&self) -> &[usize] {
+        &self.included_columns
     }
 }
 
