@@ -14,11 +14,33 @@ pub struct IndexDesc {
     mdid: u64,
     name: String,
     index_type: IndexType,
+    key_columns: Vec<ColumnVar>,
+    included_columns: Vec<ColumnVar>,
 }
 
 impl IndexDesc {
-    pub fn new(mdid: u64, name: String, index_type: IndexType) -> Self {
-        Self { mdid, name, index_type }
+    pub fn new(
+        mdid: u64,
+        name: String,
+        index_type: IndexType,
+        key_columns: Vec<ColumnVar>,
+        included_columns: Vec<ColumnVar>,
+    ) -> Self {
+        Self {
+            mdid,
+            name,
+            index_type,
+            key_columns,
+            included_columns,
+        }
+    }
+
+    pub fn key_columns(&self) -> &[ColumnVar] {
+        &self.key_columns
+    }
+
+    pub fn included_columns(&self) -> &[ColumnVar] {
+        &self.included_columns
     }
 }
 
@@ -40,7 +62,9 @@ impl LogicalIndexScan {
         let index_desc = IndexDesc::new(
             index_md.mdid(),
             index_md.index_name().to_string(),
-            index_md.index_type().clone(),
+            index_md.index_type(),
+            index_md.key_columns().to_vec(),
+            index_md.included_columns().to_vec(),
         );
 
         Self {

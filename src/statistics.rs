@@ -1,4 +1,5 @@
 use crate::datum::Datum;
+use crate::expression::ColumnVar;
 use cso_core::metadata::Metadata;
 use cso_core::metadata::Stats;
 use serde::{Deserialize, Serialize};
@@ -282,7 +283,7 @@ impl RelationMetadata {
 #[typetag::serde]
 impl Metadata for RelationMetadata {}
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IndexType {
     Btree,
 }
@@ -292,18 +293,18 @@ pub struct IndexMd {
     mdid: u64,
     index_name: String,
     index_type: IndexType,
-    key_columns: Vec<usize>,
-    included_columns: Vec<usize>,
+    key_columns: Vec<ColumnVar>,
+    included_columns: Vec<ColumnVar>,
 }
 
 impl IndexMd {
-    pub fn new(mdid: u64, index_name: String) -> Self {
+    pub fn new(mdid: u64, index_name: String, key_columns: Vec<ColumnVar>, included_columns: Vec<ColumnVar>) -> Self {
         Self {
             mdid,
             index_name,
             index_type: IndexType::Btree,
-            key_columns: vec![],
-            included_columns: vec![],
+            key_columns,
+            included_columns,
         }
     }
 
@@ -315,8 +316,16 @@ impl IndexMd {
         &self.index_name
     }
 
-    pub fn index_type(&self) -> &IndexType {
-        &self.index_type
+    pub fn index_type(&self) -> IndexType {
+        self.index_type
+    }
+
+    pub fn key_columns(&self) -> &[ColumnVar] {
+        &self.key_columns
+    }
+
+    pub fn included_columns(&self) -> &[ColumnVar] {
+        &self.included_columns
     }
 }
 

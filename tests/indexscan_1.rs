@@ -10,7 +10,7 @@ use cso_demo::operator::logical_project::LogicalProject;
 use cso_demo::operator::logical_scan::{LogicalScan, TableDesc};
 use cso_demo::operator::physical_index_scan::PhysicalIndexScan;
 use cso_demo::operator::physical_project::PhysicalProject;
-use cso_demo::operator::physical_sort::{OrderSpec, Ordering, PhysicalSort};
+use cso_demo::operator::physical_sort::{OrderSpec, Ordering};
 use cso_demo::property::sort_property::SortProperty;
 use cso_demo::property::PhysicalProperties;
 use cso_demo::rule::create_rule_set;
@@ -19,6 +19,13 @@ use cso_demo::statistics::{
 };
 use cso_demo::{LogicalPlan, Optimizer, Options, PhysicalPlan};
 use std::rc::Rc;
+
+/// Table: x(a, b, c) --- idx0_12(a, bc)
+/// Sql: select b, c from x where a is null order by a;
+/// Plan:
+///     Project(b, c)
+///         |
+///     IndexScan(a, b, c)
 
 fn logical_scan() -> LogicalPlan {
     let mdid = 2;
@@ -46,11 +53,7 @@ fn logical_project(inputs: Vec<LogicalPlan>) -> LogicalPlan {
 
 fn required_properties() -> Rc<PhysicalProperties> {
     let order = OrderSpec {
-        order_desc: vec![Ordering {
-            key: ColumnVar::new(1),
-            ascending: true,
-            nulls_first: true,
-        }],
+        order_desc: vec![Ordering::new(0)],
     };
     let sort_property = SortProperty::with_order(order);
     PhysicalProperties::with_property(Box::new(sort_property))
@@ -68,17 +71,19 @@ fn md_cache() -> MdCache {
     let boxed_relation_stats = Box::new(relation_stats.clone()) as Box<dyn Metadata>;
 
     // index metadata
-    let index_md = IndexMd::new(4, "IDX_1".to_string());
+    let index_md = IndexMd::new(
+        4,
+        "IDX_0_12".to_string(),
+        vec![ColumnVar::new(0)],
+        vec![ColumnVar::new(1), ColumnVar::new(2)],
+    );
     let boxed_index_md = Box::new(index_md) as Box<dyn Metadata>;
 
     // relation metadata
     let column_md = vec![
-        ColumnMetadata::new("i".to_string(), 1, true, 4, Datum::I32(0)),
-        ColumnMetadata::new("j".to_string(), 2, true, 4, Datum::I32(0)),
-        ColumnMetadata::new("ctid".to_string(), 3, false, 4, Datum::I32(0)),
-        ColumnMetadata::new("xmin".to_string(), 4, false, 4, Datum::I32(0)),
-        ColumnMetadata::new("cmin".to_string(), 5, false, 4, Datum::I32(0)),
-        ColumnMetadata::new("xmax".to_string(), 6, false, 4, Datum::I32(0)),
+        ColumnMetadata::new("a".to_string(), 0, true, 4, Datum::I32(0)),
+        ColumnMetadata::new("b".to_string(), 1, true, 4, Datum::I32(0)),
+        ColumnMetadata::new("c".to_string(), 2, true, 4, Datum::I32(0)),
     ];
     let relation_md = RelationMetadata::new(
         "x".to_string(),
@@ -116,32 +121,35 @@ fn metadata_accessor() -> MdAccessor {
 fn expected_physical_plan() -> PhysicalPlan {
     let mdid = 2;
     let table_desc = TableDesc::new(mdid);
-    let index_desc = IndexDesc::new(4, "IDX_1".to_string(), IndexType::Btree);
+    let index_desc = IndexDesc::new(
+        4,
+        "IDX_0_12".to_string(),
+        IndexType::Btree,
+        vec![ColumnVar::new(0)],
+        vec![ColumnVar::new(1), ColumnVar::new(2)],
+    );
     let output_columns = vec![ColumnVar::new(0), ColumnVar::new(1), ColumnVar::new(2)];
     let predicate = IsNull::new(Box::new(ColumnVar::new(0)));
-    let scan = PhysicalIndexScan::new(index_desc, table_desc, output_columns, Rc::new(predicate));
-    let scan = PhysicalPlan::new(Rc::new(scan), vec![]);
+    let scan = PhysicalPlan::new(
+        Rc::new(PhysicalIndexScan::new(
+            index_desc,
+            table_desc,
+            output_columns,
+            Rc::new(predicate),
+        )),
+        vec![],
+    );
 
     let project = vec![
         Rc::new(ColumnVar::new(1)) as Rc<dyn ScalarExpression>,
         Rc::new(ColumnVar::new(2)) as Rc<dyn ScalarExpression>,
     ];
     let project = PhysicalProject::new(project);
-    let project = PhysicalPlan::new(Rc::new(project), vec![scan]);
-
-    let order = OrderSpec {
-        order_desc: vec![Ordering {
-            key: ColumnVar::new(1),
-            ascending: true,
-            nulls_first: true,
-        }],
-    };
-    let sort = PhysicalSort::new(order);
-    PhysicalPlan::new(Rc::new(sort), vec![project])
+    PhysicalPlan::new(Rc::new(project), vec![scan])
 }
 
 #[test]
-fn test_sort_project_index_scan() {
+fn test_index_scan_1() {
     let mut optimizer = Optimizer::new(Options::default());
     let rule_set = create_rule_set();
 
@@ -152,5 +160,8 @@ fn test_sort_project_index_scan() {
     let md_accessor = metadata_accessor();
 
     let physical_plan = optimizer.optimize(project, required_properties, md_accessor, rule_set);
+
+    // dbg!(&physical_plan);
+    //
     assert_eq!(physical_plan, expected_physical_plan());
 }
