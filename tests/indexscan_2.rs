@@ -75,7 +75,12 @@ fn md_cache() -> MdCache {
     let boxed_relation_stats = Box::new(relation_stats.clone()) as Box<dyn Metadata>;
 
     // index metadata
-    let index_md = IndexMd::new(4, "IDX_0_12".to_string(), vec![0], vec![1, 2]);
+    let index_md = IndexMd::new(
+        4,
+        "IDX_0_12".to_string(),
+        vec![ColumnVar::new(0)],
+        vec![ColumnVar::new(1), ColumnVar::new(2)],
+    );
     let boxed_index_md = Box::new(index_md) as Box<dyn Metadata>;
 
     // relation metadata

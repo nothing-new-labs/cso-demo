@@ -14,8 +14,8 @@ pub struct IndexDesc {
     mdid: u64,
     name: String,
     index_type: IndexType,
-    key_columns: Vec<usize>,
-    included_columns: Vec<usize>,
+    key_columns: Vec<ColumnVar>,
+    included_columns: Vec<ColumnVar>,
 }
 
 impl IndexDesc {
@@ -23,8 +23,8 @@ impl IndexDesc {
         mdid: u64,
         name: String,
         index_type: IndexType,
-        key_columns: Vec<usize>,
-        included_columns: Vec<usize>,
+        key_columns: Vec<ColumnVar>,
+        included_columns: Vec<ColumnVar>,
     ) -> Self {
         Self {
             mdid,
@@ -35,8 +35,12 @@ impl IndexDesc {
         }
     }
 
-    pub fn key_columns(&self) -> &[usize] {
+    pub fn key_columns(&self) -> &[ColumnVar] {
         &self.key_columns
+    }
+
+    pub fn included_columns(&self) -> &[ColumnVar] {
+        &self.included_columns
     }
 }
 

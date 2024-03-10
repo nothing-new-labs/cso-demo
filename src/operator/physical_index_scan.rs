@@ -50,7 +50,7 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalIndexScan {
 
         let mut order_desc = vec![];
         for key in key_columns {
-            order_desc.push(Ordering::new(*key as u32));
+            order_desc.push(Ordering::new(key.id()));
         }
 
         let sort_prop = SortProperty::with_order(OrderSpec { order_desc });

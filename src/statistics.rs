@@ -1,4 +1,5 @@
 use crate::datum::Datum;
+use crate::expression::ColumnVar;
 use cso_core::metadata::Metadata;
 use cso_core::metadata::Stats;
 use serde::{Deserialize, Serialize};
@@ -292,12 +293,12 @@ pub struct IndexMd {
     mdid: u64,
     index_name: String,
     index_type: IndexType,
-    key_columns: Vec<usize>,
-    included_columns: Vec<usize>,
+    key_columns: Vec<ColumnVar>,
+    included_columns: Vec<ColumnVar>,
 }
 
 impl IndexMd {
-    pub fn new(mdid: u64, index_name: String, key_columns: Vec<usize>, included_columns: Vec<usize>) -> Self {
+    pub fn new(mdid: u64, index_name: String, key_columns: Vec<ColumnVar>, included_columns: Vec<ColumnVar>) -> Self {
         Self {
             mdid,
             index_name,
@@ -319,11 +320,11 @@ impl IndexMd {
         &self.index_type
     }
 
-    pub fn key_columns(&self) -> &[usize] {
+    pub fn key_columns(&self) -> &[ColumnVar] {
         &self.key_columns
     }
 
-    pub fn included_columns(&self) -> &[usize] {
+    pub fn included_columns(&self) -> &[ColumnVar] {
         &self.included_columns
     }
 }
