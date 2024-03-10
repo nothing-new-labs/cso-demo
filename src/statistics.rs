@@ -283,7 +283,7 @@ impl RelationMetadata {
 #[typetag::serde]
 impl Metadata for RelationMetadata {}
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IndexType {
     Btree,
 }
@@ -316,8 +316,8 @@ impl IndexMd {
         &self.index_name
     }
 
-    pub fn index_type(&self) -> &IndexType {
-        &self.index_type
+    pub fn index_type(&self) -> IndexType {
+        self.index_type
     }
 
     pub fn key_columns(&self) -> &[ColumnVar] {

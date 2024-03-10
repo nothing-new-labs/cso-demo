@@ -62,7 +62,7 @@ impl LogicalIndexScan {
         let index_desc = IndexDesc::new(
             index_md.mdid(),
             index_md.index_name().to_string(),
-            index_md.index_type().clone(),
+            index_md.index_type(),
             index_md.key_columns().to_vec(),
             index_md.included_columns().to_vec(),
         );
