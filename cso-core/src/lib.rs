@@ -115,6 +115,11 @@ impl<T: OptimizerType> Plan<T> {
     pub fn operator(&self) -> &Operator<T> {
         &self.op
     }
+
+    /// Returns the columns in the table needed for the current plan.
+    pub fn derive_output_columns(&self, column_set: &mut ColumnRefSet) {
+        self.op.logical_op().derive_output_columns(&self.inputs, column_set)
+    }
 }
 
 #[derive(Default)]
@@ -221,5 +226,9 @@ impl ColumnRefSet {
 
     pub fn is_superset(&self, other: &Self) -> bool {
         self.bit_set.is_superset(&other.bit_set)
+    }
+
+    pub fn union_with(&mut self, other: &ColumnRefSet) {
+        self.bit_set.union_with(&other.bit_set)
     }
 }

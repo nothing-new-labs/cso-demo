@@ -16,7 +16,7 @@ pub struct PhysicalIndexScan {
     index_desc: IndexDesc,
     table_desc: TableDesc,
     output_columns: Vec<ColumnVar>,
-    predicate: Rc<dyn ScalarExpression>,
+    _predicate: Rc<dyn ScalarExpression>,
 }
 
 impl PhysicalIndexScan {
@@ -24,13 +24,13 @@ impl PhysicalIndexScan {
         index_desc: IndexDesc,
         table_desc: TableDesc,
         output_columns: Vec<ColumnVar>,
-        predicate: Rc<dyn ScalarExpression>,
+        _predicate: Rc<dyn ScalarExpression>,
     ) -> Self {
         PhysicalIndexScan {
             index_desc,
             table_desc,
             output_columns,
-            predicate,
+            _predicate,
         }
     }
 }
@@ -62,7 +62,7 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalIndexScan {
     }
 
     fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new(1.0)
+        Cost::new(-10.0)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {
@@ -75,9 +75,21 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalIndexScan {
 
 impl PartialEq for PhysicalIndexScan {
     fn eq(&self, other: &Self) -> bool {
+        let predicate_equal = {
+            // if self.predicate.len() != other.predicate.len() {
+            //     return false;
+            // }
+            //
+            // for (elem1, elem2) in self.predicate.iter().zip(other.predicate.as_ref()) {
+            //     if elem1 != elem2 {
+            //         return false;
+            //     }
+            // }
+            true
+        };
         self.index_desc == other.index_desc
             && self.table_desc == other.table_desc
             && self.output_columns == other.output_columns
-            && self.predicate.equal(other.predicate.as_ref())
+            && predicate_equal
     }
 }

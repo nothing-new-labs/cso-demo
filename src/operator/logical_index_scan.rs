@@ -3,10 +3,11 @@ use crate::metadata::MdAccessor;
 use crate::operator::logical_scan::{derive_scan_stats, TableDesc};
 use crate::operator::OperatorId;
 use crate::statistics::{IndexMd, IndexType};
-use crate::Demo;
+use crate::{Demo, Plan};
 use cso_core::expression::ScalarExpression;
 use cso_core::metadata::Stats;
 use cso_core::operator::LogicalOperator;
+use cso_core::ColumnRefSet;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -106,5 +107,12 @@ impl LogicalOperator<Demo> for LogicalIndexScan {
 
         // todo: derive index scan stats from base_table_stats and index desc.
         base_table_stats
+    }
+
+    fn derive_output_columns(&self, inputs: &[Plan], column_set: &mut ColumnRefSet) {
+        debug_assert!(inputs.is_empty());
+        self.output_columns
+            .iter()
+            .for_each(|expr| expr.derive_used_columns(column_set));
     }
 }

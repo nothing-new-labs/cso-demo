@@ -209,7 +209,7 @@ impl<T: OptimizerType> Group<T> {
     ) {
         if let Some((cost, _group_plan)) = self.lowest_cost_plans.get(required_prop) {
             // if current cost is larger, do nothing
-            if curr_cost.value() >= cost.value() {
+            if curr_cost.value() > cost.value() {
                 return;
             }
         }

@@ -2,9 +2,11 @@ use crate::expression::ColumnVar;
 use crate::metadata::MdAccessor;
 use crate::operator::OperatorId;
 use crate::statistics::{RelationMetadata, RelationStats, Statistics};
-use crate::Demo;
+use crate::{Demo, Plan};
+use cso_core::expression::ScalarExpression;
 use cso_core::metadata::Stats;
 use cso_core::operator::LogicalOperator;
+use cso_core::ColumnRefSet;
 use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -93,5 +95,12 @@ impl LogicalOperator<Demo> for LogicalScan {
 
     fn derive_statistics(&self, md_accessor: &MdAccessor, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats> {
         derive_scan_stats(md_accessor, input_stats, self.table_desc())
+    }
+
+    fn derive_output_columns(&self, inputs: &[Plan], column_set: &mut ColumnRefSet) {
+        debug_assert!(inputs.is_empty());
+        self.output_columns
+            .iter()
+            .for_each(|expr| expr.derive_used_columns(column_set));
     }
 }
