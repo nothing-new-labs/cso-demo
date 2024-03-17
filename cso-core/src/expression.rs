@@ -19,15 +19,6 @@ impl dyn ScalarExpression {
     pub fn downcast_ref<T: ScalarExpression>(&self) -> Option<&T> {
         self.as_any().downcast_ref::<T>()
     }
-
-    #[inline]
-    pub fn is<T: ScalarExpression>(&self) -> bool {
-        if self.is::<T>() {
-            true
-        } else {
-            false
-        }
-    }
 }
 
 impl PartialEq<Self> for dyn ScalarExpression {

@@ -16,7 +16,6 @@ impl And {
     pub fn expressions(&self) -> &[Rc<dyn ScalarExpression>] {
         &self.expressions
     }
-
 }
 
 impl ScalarExpression for And {
