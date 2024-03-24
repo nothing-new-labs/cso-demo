@@ -16,7 +16,7 @@ pub struct PhysicalIndexScan {
     index_desc: IndexDesc,
     table_desc: TableDesc,
     output_columns: Vec<ColumnVar>,
-    _predicate: Rc<dyn ScalarExpression>,
+    predicate: Rc<dyn ScalarExpression>,
 }
 
 impl PhysicalIndexScan {
@@ -24,13 +24,13 @@ impl PhysicalIndexScan {
         index_desc: IndexDesc,
         table_desc: TableDesc,
         output_columns: Vec<ColumnVar>,
-        _predicate: Rc<dyn ScalarExpression>,
+        predicate: Rc<dyn ScalarExpression>,
     ) -> Self {
         PhysicalIndexScan {
             index_desc,
             table_desc,
             output_columns,
-            _predicate,
+            predicate,
         }
     }
 }
@@ -75,21 +75,9 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalIndexScan {
 
 impl PartialEq for PhysicalIndexScan {
     fn eq(&self, other: &Self) -> bool {
-        let predicate_equal = {
-            // if self.predicate.len() != other.predicate.len() {
-            //     return false;
-            // }
-            //
-            // for (elem1, elem2) in self.predicate.iter().zip(other.predicate.as_ref()) {
-            //     if elem1 != elem2 {
-            //         return false;
-            //     }
-            // }
-            true
-        };
         self.index_desc == other.index_desc
             && self.table_desc == other.table_desc
             && self.output_columns == other.output_columns
-            && predicate_equal
+            && self.predicate.as_ref() == other.predicate.as_ref()
     }
 }
