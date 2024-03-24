@@ -62,7 +62,7 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalIndexScan {
     }
 
     fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new(1.0)
+        Cost::new(-10.0)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {
@@ -78,6 +78,6 @@ impl PartialEq for PhysicalIndexScan {
         self.index_desc == other.index_desc
             && self.table_desc == other.table_desc
             && self.output_columns == other.output_columns
-            && self.predicate.equal(other.predicate.as_ref())
+            && self.predicate.as_ref() == other.predicate.as_ref()
     }
 }

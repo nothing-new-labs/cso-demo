@@ -3,7 +3,7 @@ use crate::cost::Cost;
 use crate::metadata::MdAccessor;
 use crate::metadata::Stats;
 use crate::property::PhysicalProperties;
-use crate::OptimizerType;
+use crate::{ColumnRefSet, OptimizerType, Plan};
 use dyn_clonable::clonable;
 use std::fmt::Debug;
 use std::rc::Rc;
@@ -12,6 +12,8 @@ pub trait LogicalOperator<T: OptimizerType>: AsAny + Debug {
     fn name(&self) -> &str;
     fn operator_id(&self) -> &T::OperatorId;
     fn derive_statistics(&self, _md_accessor: &MdAccessor<T>, input_stats: &[Rc<dyn Stats>]) -> Rc<dyn Stats>;
+    /// Returns the columns in the table needed for the current operator.
+    fn derive_output_columns(&self, inputs: &[Plan<T>], column_set: &mut ColumnRefSet);
 }
 
 impl<O: OptimizerType> dyn LogicalOperator<O> {

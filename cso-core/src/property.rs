@@ -62,12 +62,12 @@ impl<T: OptimizerType> PhysicalProperties<T> {
         // all output properties should be super set of required one
 
         // TODO: multiple properties
-
-        if self.properties.is_empty() || required_prop.properties.is_empty() {
-            return self.properties.is_empty() && required_prop.properties.is_empty();
+        match (self.properties.is_empty(), required_prop.properties.is_empty()) {
+            (_, true) => true,
+            (true, false) => false,
+            (false, false) => self.properties[0].satisfy(required_prop.properties[0].as_ref())
         }
 
-        self.properties[0].satisfy(required_prop.properties[0].as_ref())
     }
 
     // TODO: multiple properties

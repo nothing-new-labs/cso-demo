@@ -1,19 +1,28 @@
 use cso_core::expression::ScalarExpression;
 use cso_core::ColumnRefSet;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct And {
-    expressions: Vec<Box<dyn ScalarExpression>>,
+    expressions: Vec<Rc<dyn ScalarExpression>>,
 }
 
 impl And {
-    pub fn new(expressions: Vec<Box<dyn ScalarExpression>>) -> And {
+    pub fn new(expressions: Vec<Rc<dyn ScalarExpression>>) -> And {
         assert!(expressions.iter().all(|expr| expr.is_boolean_expression()));
         And { expressions }
+    }
+
+    pub fn expressions(&self) -> &[Rc<dyn ScalarExpression>] {
+        &self.expressions
     }
 }
 
 impl ScalarExpression for And {
+    fn is_boolean_expression(&self) -> bool {
+        true
+    }
+
     fn equal(&self, other: &dyn ScalarExpression) -> bool {
         match other.downcast_ref::<And>() {
             Some(other) => self.expressions == other.expressions,
@@ -39,6 +48,10 @@ impl Or {
 }
 
 impl ScalarExpression for Or {
+    fn is_boolean_expression(&self) -> bool {
+        true
+    }
+
     fn equal(&self, other: &dyn ScalarExpression) -> bool {
         match other.downcast_ref::<Or>() {
             Some(other) => self.expressions == other.expressions,
@@ -64,6 +77,9 @@ impl Not {
 }
 
 impl ScalarExpression for Not {
+    fn is_boolean_expression(&self) -> bool {
+        true
+    }
     fn equal(&self, other: &dyn ScalarExpression) -> bool {
         match other.downcast_ref::<Not>() {
             Some(other) => self.expression.eq(&other.expression),
