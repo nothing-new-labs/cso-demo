@@ -38,7 +38,7 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalFilter {
     }
 
     fn required_properties(&self, input_prop: Rc<PhysicalProperties>) -> Vec<Vec<Rc<PhysicalProperties>>> {
-        vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
+        vec![vec![Rc::new(PhysicalProperties::new())], vec![input_prop]]
     }
 
     fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {

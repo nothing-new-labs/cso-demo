@@ -297,14 +297,6 @@ fn expected_physical_plan_with_index_2() -> PhysicalPlan {
         Rc::new(And::new(vec![Rc::new(predicate)])),
     );
     let scan = PhysicalPlan::new(Rc::new(scan), vec![]);
-
-    let project = vec![
-        Rc::new(ColumnVar::new(1)) as Rc<dyn ScalarExpression>,
-        Rc::new(ColumnVar::new(2)) as Rc<dyn ScalarExpression>,
-    ];
-    let project = PhysicalProject::new(project);
-    let project = PhysicalPlan::new(Rc::new(project), vec![scan]);
-
     let order = OrderSpec {
         order_desc: vec![Ordering {
             key: ColumnVar::new(1),
@@ -313,28 +305,34 @@ fn expected_physical_plan_with_index_2() -> PhysicalPlan {
         }],
     };
     let sort = PhysicalSort::new(order);
-    PhysicalPlan::new(Rc::new(sort), vec![project])
+    let sort = PhysicalPlan::new(Rc::new(sort), vec![scan]);
+
+    let project = vec![
+        Rc::new(ColumnVar::new(1)) as Rc<dyn ScalarExpression>,
+        Rc::new(ColumnVar::new(2)) as Rc<dyn ScalarExpression>,
+    ];
+    let project = PhysicalProject::new(project);
+    PhysicalPlan::new(Rc::new(project), vec![sort])
 }
 
 // can completely cover filter but need another column to order by
 // sql: select c2, c3 from t1 where c1 is null order by c2;
 // idx: key columns(c1) included columns(c1, c2, c3)
-// expected:
-// 1. Sort(c2) -> Project(c2, c3) -> IndexScan(c1)  -- expected
-// 2. Sort(c2) -> Project(c2, c3) -> Filter(c1) -> Scan
-// but:
-// Sort(c2) -> Project(c2, c3) -> Sort(c2) -> IndexScan(c1) -- out
-// #[test]
-// fn test_sort_project_index_scan_matched_2() {
-//     let mut optimizer = Optimizer::new(Options::default());
-//     let rule_set = create_rule_set();
-//
-//     let scan = logical_scan();
-//     let filter = logical_filter(vec![scan], 0, None);
-//     let project = logical_project(vec![filter]);
-//     let required_properties = required_properties(1);
-//     let md_accessor = metadata_accessor();
-//
-//     let physical_plan = optimizer.optimize(project, required_properties, md_accessor, rule_set);
-//     assert_eq!(physical_plan, expected_physical_plan_with_index_2());
-// }
+// valid plan:
+// 1. Sort(c2) -> Project(c2, c3) -> IndexScan(c1)
+// 2. Project(c2, c3) -> Sort(c2) -> IndexScan(c1) -- expected
+// 3. Sort(c2) -> Project(c2, c3) -> Filter(c1) -> Scan
+#[test]
+fn test_sort_project_index_scan_matched_2() {
+    let mut optimizer = Optimizer::new(Options::default());
+    let rule_set = create_rule_set();
+
+    let scan = logical_scan();
+    let filter = logical_filter(vec![scan], 0, None);
+    let project = logical_project(vec![filter]);
+    let required_properties = required_properties(1);
+    let md_accessor = metadata_accessor();
+
+    let physical_plan = optimizer.optimize(project, required_properties, md_accessor, rule_set);
+    assert_eq!(physical_plan, expected_physical_plan_with_index_2());
+}

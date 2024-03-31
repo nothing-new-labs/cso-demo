@@ -50,7 +50,7 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
         // 1. according to current operator create new requestPropList for children
         let child_reqd_props_list = self.init_child_required_props_list();
 
-        for child_reqd_prors in child_reqd_props_list.iter().skip(self.prev_index) {
+        for (index, child_reqd_prors) in child_reqd_props_list.iter().skip(self.prev_index).enumerate() {
             let mut total_cost = self.plan.borrow().compute_cost();
 
             let mut child_output_props = vec![];
@@ -67,8 +67,8 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
                         total_cost += *cost;
                     }
                     None => {
+                        self.prev_index = index;
                         // 3. get output property of child groups and add enforcer to cost and plan pair
-                        // self.prev_index += 1;
                         task_runner.push_task(self.clone());
                         let task = OptimizeGroupTask::new(curr_child_ref.clone(), child_reqd_prop.clone());
                         task_runner.push_task(task);
@@ -97,14 +97,20 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
                 let enforer = optimizer_ctx.memo.insert_group_plan(enforer, Some(curr_group.clone()));
                 enforer
                     .borrow_mut()
-                    .update_require_to_output_map(&self.required_prop, &output_prop);
-
+                    .update_require_to_output_map(&self.required_prop, &self.required_prop);
                 let enforer_cost = enforer.borrow().compute_cost();
                 total_cost += enforer_cost;
 
                 let mut curr_group = curr_group.borrow_mut();
                 curr_group.update_cost_plan(&self.required_prop, &enforer, total_cost);
                 curr_group.update_child_required_props(&self.required_prop, vec![output_prop], total_cost);
+            } else {
+                curr_plan.update_require_to_output_map(&self.required_prop, &self.required_prop);
+
+                let curr_group_ref = curr_plan.group();
+                let mut curr_group = curr_group_ref.borrow_mut();
+                curr_group.update_cost_plan(&self.required_prop, &self.plan, total_cost);
+                curr_group.update_child_required_props(&self.required_prop, child_reqd_prors.clone(), total_cost);
             }
         }
     }
