@@ -297,6 +297,7 @@ fn expected_physical_plan_with_index_2() -> PhysicalPlan {
         Rc::new(And::new(vec![Rc::new(predicate)])),
     );
     let scan = PhysicalPlan::new(Rc::new(scan), vec![]);
+
     let order = OrderSpec {
         order_desc: vec![Ordering {
             key: ColumnVar::new(1),
@@ -335,4 +336,66 @@ fn test_sort_project_index_scan_matched_2() {
 
     let physical_plan = optimizer.optimize(project, required_properties, md_accessor, rule_set);
     assert_eq!(physical_plan, expected_physical_plan_with_index_2());
+}
+
+fn expected_physical_plan_with_index_and_filter_2() -> PhysicalPlan {
+    let mdid = 2;
+    let table_desc = TableDesc::new(mdid);
+    let index_desc = IndexDesc::new(
+        4,
+        "IDX_1".to_string(),
+        IndexType::Btree,
+        vec![ColumnVar::new(0)],
+        vec![ColumnVar::new(0), ColumnVar::new(1), ColumnVar::new(2)],
+    );
+    let output_columns = vec![ColumnVar::new(0), ColumnVar::new(1), ColumnVar::new(2)];
+    let predicate = IsNull::new(Box::new(ColumnVar::new(0)));
+    let scan = PhysicalIndexScan::new(
+        index_desc,
+        table_desc,
+        output_columns,
+        Rc::new(And::new(vec![Rc::new(predicate)])),
+    );
+    let scan = PhysicalPlan::new(Rc::new(scan), vec![]);
+
+    let filter = PhysicalFilter::new(Rc::new(And::new(vec![Rc::new(IsNull::new(Box::new(ColumnVar::new(
+        1,
+    ))))])));
+    let filter = PhysicalPlan::new(Rc::new(filter), vec![scan]);
+
+    let project = vec![
+        Rc::new(ColumnVar::new(1)) as Rc<dyn ScalarExpression>,
+        Rc::new(ColumnVar::new(2)) as Rc<dyn ScalarExpression>,
+    ];
+    let project = PhysicalProject::new(project);
+    let project = PhysicalPlan::new(Rc::new(project), vec![filter]);
+
+    let order = OrderSpec {
+        order_desc: vec![Ordering {
+            key: ColumnVar::new(1),
+            ascending: true,
+            nulls_first: true,
+        }],
+    };
+    let sort = PhysicalSort::new(order);
+    PhysicalPlan::new(Rc::new(sort), vec![project])
+}
+
+// can partly cover filter
+// sql: select c2, c3 from t1 where c1 is null and c2 is null order by c2;
+// idx: key columns(c1) included columns(c1, c2, c3)
+// Sort(c2) -> project(c2, c3) -> filter(c2) -> IndexScan(c1)
+#[test]
+fn test_sort_project_index_scan_partly_matched_2() {
+    let mut optimizer = Optimizer::new(Options::default());
+    let rule_set = create_rule_set();
+
+    let scan = logical_scan();
+    let filter = logical_filter(vec![scan], 0, Some(1));
+    let project = logical_project(vec![filter]);
+    let required_properties = required_properties(1);
+    let md_accessor = metadata_accessor();
+
+    let physical_plan = optimizer.optimize(project, required_properties, md_accessor, rule_set);
+    assert_eq!(physical_plan, expected_physical_plan_with_index_and_filter_2());
 }
