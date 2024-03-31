@@ -1,3 +1,4 @@
+use crate::cost::COST_SORT_TUP_WIDTH_COST_UNIT;
 use crate::expression::ColumnVar;
 use crate::operator::{OperatorId, PhysicalOperator};
 use crate::property::sort_property::SortProperty;
@@ -63,8 +64,11 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalSort {
         ))]]
     }
 
-    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new(2.0)
+    fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {
+        debug_assert!(stats.is_some());
+
+        let row_count = stats.unwrap().output_row_count().max(1) as f64;
+        Cost::new(row_count * row_count.log2() * COST_SORT_TUP_WIDTH_COST_UNIT)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {

@@ -1,9 +1,11 @@
+use crate::cost::COST_FILTER_COL_COST_UNIT;
 use crate::operator::{OperatorId, PhysicalOperator};
 use crate::property::PhysicalProperties;
 use crate::Demo;
 use cso_core::cost::Cost;
 use cso_core::expression::ScalarExpression;
 use cso_core::metadata::Stats;
+use cso_core::ColumnRefSet;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
@@ -39,8 +41,15 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalFilter {
         vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
     }
 
-    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new(2.0)
+    fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {
+        debug_assert!(stats.is_some());
+
+        let mut filter_columns = ColumnRefSet::new();
+        self.predicate.derive_used_columns(&mut filter_columns);
+        let filter_columns_count = filter_columns.len() as f64;
+
+        let row_count = stats.unwrap().output_row_count() as f64;
+        Cost::new(row_count * filter_columns_count * COST_FILTER_COL_COST_UNIT)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {

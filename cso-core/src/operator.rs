@@ -78,4 +78,12 @@ impl<T: OptimizerType> Operator<T> {
             Operator::Physical(op) => op,
         }
     }
+
+    #[inline]
+    pub fn operator_id(&self) -> &T::OperatorId {
+        match self {
+            Operator::Logical(op) => op.operator_id(),
+            Operator::Physical(op) => op.operator_id(),
+        }
+    }
 }

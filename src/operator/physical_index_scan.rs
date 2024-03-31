@@ -1,3 +1,4 @@
+use crate::cost::{COST_INDEX_FILTER_COST_UNIT, COST_INDEX_SCAN_TUP_COST_UNIT, COST_INDEX_SCAN_TUP_RANDOM_FACTOR};
 use crate::expression::ColumnVar;
 use crate::operator::logical_index_scan::IndexDesc;
 use crate::operator::logical_scan::TableDesc;
@@ -61,8 +62,13 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalIndexScan {
         vec![vec![]]
     }
 
-    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new(-10.0)
+    fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {
+        debug_assert!(stats.is_some());
+
+        let index_key_column_count = self.index_desc.key_columns_count() as f64;
+        let cost_per_index_row = index_key_column_count * COST_INDEX_FILTER_COST_UNIT + COST_INDEX_SCAN_TUP_COST_UNIT;
+        let row_count = stats.unwrap().output_row_count() as f64;
+        Cost::new(row_count * cost_per_index_row + COST_INDEX_SCAN_TUP_RANDOM_FACTOR)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {

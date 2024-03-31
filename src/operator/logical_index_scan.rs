@@ -43,6 +43,10 @@ impl IndexDesc {
     pub fn included_columns(&self) -> &[ColumnVar] {
         &self.included_columns
     }
+
+    pub fn key_columns_count(&self) -> usize {
+        self.key_columns.len()
+    }
 }
 
 #[derive(Debug)]

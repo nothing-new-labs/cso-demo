@@ -1,3 +1,4 @@
+use crate::cost::COST_TUP_DEFAULT_PROC_COST_UNIT;
 use crate::operator::{OperatorId, PhysicalOperator};
 use crate::property::PhysicalProperties;
 use crate::Demo;
@@ -34,8 +35,11 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalProject {
         vec![vec![input_prop], vec![Rc::new(PhysicalProperties::new())]]
     }
 
-    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new(1.0)
+    fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {
+        debug_assert!(stats.is_some());
+
+        let row_count = stats.unwrap().output_row_count() as f64;
+        Cost::new(row_count * COST_TUP_DEFAULT_PROC_COST_UNIT)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {

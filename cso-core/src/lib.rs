@@ -231,4 +231,8 @@ impl ColumnRefSet {
     pub fn union_with(&mut self, other: &ColumnRefSet) {
         self.bit_set.union_with(&other.bit_set)
     }
+
+    pub fn len(&self) -> usize {
+        self.bit_set.len()
+    }
 }
