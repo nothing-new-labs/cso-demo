@@ -319,7 +319,11 @@ fn expected_physical_plan_with_index_2() -> PhysicalPlan {
 // can completely cover filter but need another column to order by
 // sql: select c2, c3 from t1 where c1 is null order by c2;
 // idx: key columns(c1) included columns(c1, c2, c3)
-// Sort(c2) -> Project(c2, c3) -> IndexScan(c1)
+// expected:
+// 1. Sort(c2) -> Project(c2, c3) -> IndexScan(c1)  -- expected
+// 2. Sort(c2) -> Project(c2, c3) -> Filter(c1) -> Scan
+// but:
+// Sort(c2) -> Project(c2, c3) -> Sort(c2) -> IndexScan(c1) -- out
 // #[test]
 // fn test_sort_project_index_scan_matched_2() {
 //     let mut optimizer = Optimizer::new(Options::default());
@@ -332,5 +336,5 @@ fn expected_physical_plan_with_index_2() -> PhysicalPlan {
 //     let md_accessor = metadata_accessor();
 //
 //     let physical_plan = optimizer.optimize(project, required_properties, md_accessor, rule_set);
-//     assert_eq!(physical_plan, crate::expected_physical_plan_with_index_2());
+//     assert_eq!(physical_plan, expected_physical_plan_with_index_2());
 // }
