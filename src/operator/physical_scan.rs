@@ -1,3 +1,4 @@
+use crate::cost::{COST_INIT_SCAN_FACTOR, COST_TABLE_SCAN_COST_UNIT};
 use crate::expression::ColumnVar;
 use crate::operator::logical_scan::TableDesc;
 use crate::operator::{OperatorId, PhysicalOperator};
@@ -39,8 +40,11 @@ impl cso_core::operator::PhysicalOperator<Demo> for PhysicalScan {
         vec![vec![]]
     }
 
-    fn compute_cost(&self, _stats: Option<&dyn Stats>) -> Cost {
-        Cost::new(1.0)
+    fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {
+        debug_assert!(stats.is_some());
+
+        let row_count = stats.unwrap().output_row_count() as f64;
+        Cost::new(COST_INIT_SCAN_FACTOR + row_count * COST_TABLE_SCAN_COST_UNIT)
     }
 
     fn equal(&self, other: &PhysicalOperator) -> bool {

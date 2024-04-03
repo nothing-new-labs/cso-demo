@@ -144,6 +144,10 @@ impl Stats for Statistics {
         let new_stats = new_stats.as_ref().as_any().downcast_ref::<Statistics>().unwrap();
         new_stats.output_row_count < self.output_row_count
     }
+
+    fn output_row_count(&self) -> u64 {
+        self.output_row_count
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

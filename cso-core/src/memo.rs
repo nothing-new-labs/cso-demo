@@ -11,7 +11,6 @@ use std::rc::{Rc, Weak};
 
 type RequireToOutputMap<T> = HashMap<Rc<PhysicalProperties<T>>, Rc<PhysicalProperties<T>>>;
 
-#[derive(Debug)]
 pub struct GroupPlan<T: OptimizerType> {
     group: GroupWeakRef<T>,
     op: Operator<T>,
@@ -90,8 +89,10 @@ impl<T: OptimizerType> GroupPlan<T> {
         self.require_to_output_map.get(reqd_prop).expect("output not null")
     }
 
-    pub fn compute_cost(&self, stats: Option<&dyn Stats>) -> Cost {
-        self.op.physical_op().compute_cost(stats)
+    pub fn compute_cost(&self) -> Cost {
+        let curr_group = self.group();
+        let curr_group = curr_group.borrow();
+        self.op.physical_op().compute_cost(curr_group.statistics().as_deref())
     }
 
     pub fn update_require_to_output_map(
@@ -111,7 +112,6 @@ impl<T: OptimizerType> GroupPlan<T> {
 type LowestCostPlans<T> = HashMap<Rc<PhysicalProperties<T>>, (Cost, GroupPlanRef<T>)>;
 type ChildRequiredPropertiesMap<T> = HashMap<Rc<PhysicalProperties<T>>, (Cost, Vec<Rc<PhysicalProperties<T>>>)>;
 
-#[derive(Debug)]
 pub struct Group<T: OptimizerType> {
     group_id: u32,
     logical_plans: Vec<GroupPlanRef<T>>,
@@ -209,7 +209,7 @@ impl<T: OptimizerType> Group<T> {
     ) {
         if let Some((cost, _group_plan)) = self.lowest_cost_plans.get(required_prop) {
             // if current cost is larger, do nothing
-            if curr_cost.value() > cost.value() {
+            if curr_cost.value() >= cost.value() {
                 return;
             }
         }
@@ -265,7 +265,6 @@ impl<T: OptimizerType> Group<T> {
     }
 }
 
-#[derive(Debug)]
 pub struct Memo<T: OptimizerType> {
     groups: Vec<GroupRef<T>>,
     root_group: Option<GroupRef<T>>,

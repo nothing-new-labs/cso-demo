@@ -4,4 +4,5 @@ use std::rc::Rc;
 
 pub trait Stats: Debug + AsAny {
     fn should_update(&self, new_stats: &Rc<dyn Stats>) -> bool;
+    fn output_row_count(&self) -> u64;
 }
