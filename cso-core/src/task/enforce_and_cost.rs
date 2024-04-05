@@ -1,5 +1,4 @@
-use crate::cost::Cost;
-use crate::memo::{GroupPlanRef, GroupRef};
+use crate::memo::{GroupPlanRef, GroupRef, LowestCostPlan};
 use crate::property::PhysicalProperties;
 use crate::task::{Task, TaskRunner};
 use crate::{OptimizeGroupTask, OptimizerContext, OptimizerType};
@@ -52,7 +51,7 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
         let child_reqd_props_list = self.init_child_required_props_list();
 
         for (index, child_reqd_props) in child_reqd_props_list.iter().skip(self.prev_index).enumerate() {
-            let mut total_cost = self.plan.borrow().compute_cost();
+            let mut cost = self.plan.borrow().compute_cost();
             let mut child_output_props = Vec::with_capacity(child_reqd_props.len());
 
             for (child_index, child_reqd_prop) in child_reqd_props.iter().enumerate() {
@@ -63,10 +62,10 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
                 // if we have optimized current child group, we can get the best (Cost, GroupPlan).
                 // otherwise, we need to optimize current child group first.
                 match curr_child.lowest_cost_plans().get(child_reqd_prop) {
-                    Some((cost, plan)) => {
+                    Some((child_cost, plan)) => {
                         let output_prop = plan.borrow().get_output_prop(child_reqd_prop).clone();
                         child_output_props.push(output_prop);
-                        total_cost += *cost;
+                        cost += *child_cost;
                     }
                     None => {
                         self.prev_index = index;
@@ -80,13 +79,16 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
 
             // successfully optimize all child group, and we can compute the output property for current operator.
             let output_prop = self.derive_output_props(&child_output_props);
-            self.submit_best_plan(&output_prop, &self.plan, child_reqd_props.clone(), total_cost);
+            self.submit_best_plan(&output_prop, (cost, self.plan.clone()), child_reqd_props.clone());
 
             // enforce property if output_prop doesn't satisfy self.required_prop
-            let enforcer = self.add_enforcer(&output_prop, &self.required_prop, optimizer_ctx, &mut total_cost);
+            let enforcer = self.add_enforcer(&output_prop, &self.required_prop, optimizer_ctx);
             match enforcer {
-                Some(enforcer) => self.submit_best_plan(&self.required_prop, &enforcer, vec![output_prop], total_cost),
-                None => self.submit_best_plan(&self.required_prop, &self.plan, child_reqd_props.clone(), total_cost),
+                Some(enforcer) => {
+                    cost += enforcer.borrow().compute_cost();
+                    self.submit_best_plan(&self.required_prop, (cost, enforcer), vec![output_prop])
+                }
+                None => self.submit_best_plan(&self.required_prop, (cost, self.plan.clone()), child_reqd_props.clone()),
             }
         }
     }
@@ -99,10 +101,11 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
     fn submit_best_plan(
         &self,
         required_prop: &Rc<PhysicalProperties<T>>,
-        best_plan: &GroupPlanRef<T>,
+        lowest_cost_plan: LowestCostPlan<T>,
         child_reqd_props: Vec<Rc<PhysicalProperties<T>>>,
-        cost: Cost,
     ) {
+        let (cost, best_plan) = lowest_cost_plan;
+
         // The passed-in best_plan might be self.plan, in which case there would be an issue with duplicate borrows.
         // To address this problem, we explicitly add `{}` to control the lifetime of the borrow.
         {
@@ -110,8 +113,8 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
             let curr_group = curr_plan.group();
             let mut curr_group = curr_group.borrow_mut();
 
-            curr_group.update_cost_plan(required_prop, &best_plan, cost);
-            curr_group.update_child_required_props(required_prop, child_reqd_props, cost);
+            curr_group.update_cost_plan(required_prop, (cost, best_plan.clone()));
+            curr_group.update_child_required_props(required_prop, cost, child_reqd_props);
         }
 
         {
@@ -125,7 +128,6 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
         output_prop: &Rc<PhysicalProperties<T>>,
         required_prop: &Rc<PhysicalProperties<T>>,
         optimizer_ctx: &mut OptimizerContext<T>,
-        total_cost: &mut Cost,
     ) -> Option<GroupPlanRef<T>> {
         let curr_plan = self.plan.borrow();
         let curr_group = curr_plan.group();
@@ -133,7 +135,6 @@ impl<T: OptimizerType> EnforceAndCostTask<T> {
         if !output_prop.satisfy(required_prop) {
             let enforcer = required_prop.make_enforcer(curr_group.clone());
             let enforcer = optimizer_ctx.memo.insert_group_plan(enforcer, Some(curr_group));
-            *total_cost += enforcer.borrow().compute_cost();
             Some(enforcer)
         } else {
             None

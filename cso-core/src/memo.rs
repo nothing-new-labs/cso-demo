@@ -109,7 +109,8 @@ impl<T: OptimizerType> GroupPlan<T> {
     }
 }
 
-type LowestCostPlans<T> = HashMap<Rc<PhysicalProperties<T>>, (Cost, GroupPlanRef<T>)>;
+pub type LowestCostPlan<T> = (Cost, GroupPlanRef<T>);
+type LowestCostPlans<T> = HashMap<Rc<PhysicalProperties<T>>, LowestCostPlan<T>>;
 type ChildRequiredPropertiesMap<T> = HashMap<Rc<PhysicalProperties<T>>, (Cost, Vec<Rc<PhysicalProperties<T>>>)>;
 
 pub struct Group<T: OptimizerType> {
@@ -201,38 +202,30 @@ impl<T: OptimizerType> Group<T> {
         &mut self.lowest_cost_plans
     }
 
-    pub fn update_cost_plan(
-        &mut self,
-        required_prop: &Rc<PhysicalProperties<T>>,
-        curr_plan: &GroupPlanRef<T>,
-        curr_cost: Cost,
-    ) {
-        if let Some((cost, _group_plan)) = self.lowest_cost_plans.get(required_prop) {
-            // if current cost is larger, do nothing
-            if curr_cost.value() >= cost.value() {
+    pub fn update_cost_plan(&mut self, required_prop: &Rc<PhysicalProperties<T>>, lowest_cost_plan: LowestCostPlan<T>) {
+        if let Some((cost, _)) = self.lowest_cost_plans.get(required_prop) {
+            if lowest_cost_plan.0 >= *cost {
                 return;
             }
         }
-        // update lowest_cost_plans
-        self.lowest_cost_plans
-            .insert(required_prop.clone(), (curr_cost, curr_plan.clone()));
+
+        self.lowest_cost_plans.insert(required_prop.clone(), lowest_cost_plan);
     }
 
     pub fn update_child_required_props(
         &mut self,
         required_prop: &Rc<PhysicalProperties<T>>,
-        child_required_props: Vec<Rc<PhysicalProperties<T>>>,
         curr_cost: Cost,
+        child_required_props: Vec<Rc<PhysicalProperties<T>>>,
     ) {
-        if let Some((cost, _child_reqds)) = self.child_required_properties.get(required_prop) {
-            // if current cost is larger, do nothing
-            if curr_cost.value() >= cost.value() {
+        if let Some((cost, _)) = self.child_required_properties.get(required_prop) {
+            if curr_cost >= *cost {
                 return;
             }
         }
-        // update lowest_cost_plans
-        self.child_required_properties
-            .insert(required_prop.clone(), (curr_cost, child_required_props));
+
+        let v = (curr_cost, child_required_props);
+        self.child_required_properties.insert(required_prop.clone(), v);
     }
 
     fn best_plan(&self, required_prop: &PhysicalProperties<T>) -> Option<&(Cost, GroupPlanRef<T>)> {
